@@ -29,20 +29,20 @@
 </head>
 <body>
   <h1>MCAP /rosout 檢視器</h1>
-  <p class="hint">將 .mcap 檔拖入下方，或點擊選擇檔案。檔案在瀏覽器內讀取，不會上傳。</p>
-  <div id="drop" role="button" tabindex="0">拖入 MCAP 檔案，或點此選擇<input id="file" type="file" accept=".mcap"></div>
+  <p class="hint">將一個或多個 .mcap 檔拖入下方，或點擊選擇檔案。檔案在瀏覽器內讀取，不會上傳。</p>
+  <div id="drop" role="button" tabindex="0">拖入 MCAP 檔案，或點此選擇<input id="file" type="file" accept=".mcap" multiple></div>
   <div class="bar">
     <input id="search" type="search" placeholder="搜尋 logger、訊息或來源檔案" aria-label="搜尋">
     <select id="level" aria-label="最低等級"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select>
     <button id="download" disabled>下載目前結果 CSV</button>
   </div>
   <p id="status">尚未載入檔案</p><p id="error" role="alert"></p>
-  <div class="table-wrap"><table><thead><tr><th>時間</th><th>等級</th><th>Logger</th><th>訊息</th><th>來源</th></tr></thead><tbody id="rows"></tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>時間</th><th>等級</th><th>Logger</th><th>訊息</th><th>MCAP</th><th>來源</th></tr></thead><tbody id="rows"></tbody></table></div>
   <p class="hint">需要網路連線載入 MCAP 函式庫；支援未壓縮的 ROS 2 CDR rcl_interfaces/msg/Log。</p>
   <script type="module">
     const $ = id => document.getElementById(id);
     const drop = $('drop'), fileInput = $('file');
-    let logs = [], currentFile = '', loadToken = 0;
+    let logs = [], loadedFiles = [], loadToken = 0;
     const levels = {10:'DEBUG', 20:'INFO', 30:'WARN', 40:'ERROR', 50:'FATAL'};
     const decoder = new TextDecoder();
 
@@ -63,62 +63,105 @@
     }
 
     function displayTime(ms) { const d = new Date(ms); return Number.isNaN(d.getTime()) ? String(ms) : d.toLocaleString('zh-TW', {hour12:false}) + '.' + String(Math.floor(ms % 1000)).padStart(3,'0'); }
-    function filtered() { const q = $('search').value.trim().toLocaleLowerCase(), min = Number($('level').value); return logs.filter(x => x.level >= min && (!q || [x.name,x.msg,x.file,x.func].some(v => v.toLocaleLowerCase().includes(q)))); }
+    const ansiColors = {30:'#26313d',31:'#b42318',32:'#16803c',33:'#9a6700',34:'#175cd3',35:'#9e3ab1',36:'#087f8c',37:'#52606d',90:'#667085',91:'#d92d20',92:'#039855',93:'#dc6803',94:'#2e90fa',95:'#c11574',96:'#06aed4',97:'#1d2939'};
+    function appendAnsiText(target, text) {
+      let offset = 0, color = '', bold = false;
+      const ansi = /\x1b\[([0-9;]*)m/g;
+      const append = value => {
+        if (!value) return;
+        const span = document.createElement('span');
+        span.textContent = value;
+        if (color) span.style.color = color;
+        if (bold) span.style.fontWeight = '700';
+        target.append(span);
+      };
+      for (let match; (match = ansi.exec(text));) {
+        append(text.slice(offset, match.index));
+        const codes = match[1] ? match[1].split(';').map(Number) : [0];
+        for (const code of codes) {
+          if (code === 0) { color = ''; bold = false; }
+          else if (code === 1) bold = true;
+          else if (code === 22) bold = false;
+          else if (ansiColors[code]) color = ansiColors[code];
+          else if (code === 39) color = '';
+        }
+        offset = ansi.lastIndex;
+      }
+      append(text.slice(offset).replace(/\x1b[\][^\x07]*(?:\x07|\x1b\\\\)/g, ''));
+    }
+    function filtered() { const q = $('search').value.trim().toLocaleLowerCase(), min = Number($('level').value); return logs.filter(x => x.level >= min && (!q || [x.name,x.msg,x.file,x.func,x.bag].some(v => v.toLocaleLowerCase().includes(q)))); }
     function render() {
       const matches = filtered(), body = $('rows'); body.replaceChildren();
       const fragment = document.createDocumentFragment();
       for (const log of matches.slice(0, 5000)) {
         const tr = document.createElement('tr');
         const levelName = levels[log.level] || String(log.level);
-        for (const [value, cls] of [[displayTime(log.time),''],[levelName,'level '+levelName],[log.name,''],[log.msg,'message'],[`${log.file}:${log.line}${log.func ? ' · '+log.func : ''}`,'']]) {
-          const td = document.createElement('td'); td.textContent = value; if (cls) td.className = cls; tr.append(td);
+        const cells = [[displayTime(log.time),''],[levelName,'level '+levelName],[log.name,''],[log.msg,'message'],[log.bag,''],[`${log.file}:${log.line}${log.func ? ' · '+log.func : ''}`,'']];
+        for (const [value, cls] of cells) {
+          const td = document.createElement('td');
+          if (cls === 'message') appendAnsiText(td, value); else td.textContent = value;
+          if (cls) td.className = cls;
+          tr.append(td);
         }
         fragment.append(tr);
       }
       body.append(fragment);
-      $('status').textContent = `${currentFile || '檔案'}：共 ${logs.length.toLocaleString()} 筆 /rosout，篩選後 ${matches.length.toLocaleString()} 筆` + (matches.length > 5000 ? '（表格只顯示前 5,000 筆，可下載全部篩選結果）' : '');
+      $('status').textContent = `${loadedFiles.length ? loadedFiles.join(', ') : '檔案'}：共 ${logs.length.toLocaleString()} 筆 /rosout，篩選後 ${matches.length.toLocaleString()} 筆` + (matches.length > 5000 ? '（表格只顯示前 5,000 筆，可下載全部篩選結果）' : '');
       $('download').disabled = matches.length === 0;
     }
 
-    async function load(file) {
-      if (!file) return;
-      const token = ++loadToken; logs = []; currentFile = file.name; $('rows').replaceChildren(); $('error').textContent = ''; $('download').disabled = true;
-      $('status').textContent = `正在讀取 ${file.name}…`;
+    async function load(files) {
+      const selected = [...files].filter(file => file);
+      if (!selected.length) return;
+      const token = ++loadToken; logs = []; loadedFiles = selected.map(file => file.name);
+      $('rows').replaceChildren(); $('error').textContent = ''; $('download').disabled = true;
+      $('status').textContent = `正在讀取 ${selected.length} 個檔案…`;
       try {
         const [{BlobReadable}, {McapIndexedReader}] = await Promise.all([
           import('https://esm.sh/@mcap/browser@1.1.0'), import('https://esm.sh/@mcap/core@2.1.6')
         ]);
-        const reader = await McapIndexedReader.Initialize({readable:new BlobReadable(file)});
-        const channels = [...reader.channelsById.values()].filter(c => c.topic === '/rosout');
-        if (!channels.length) throw new Error('此 MCAP 沒有 /rosout topic。');
-        for (const channel of channels) {
-          const schema = reader.schemasById.get(channel.schemaId);
-          if (channel.messageEncoding !== 'cdr' || !schema?.name?.includes('rcl_interfaces/msg/Log'))
-            throw new Error(`/rosout 使用 ${channel.messageEncoding} / ${schema?.name || '未知 schema'}，目前僅支援 ROS 2 CDR rcl_interfaces/msg/Log。`);
-        }
-        let count = 0;
-        for await (const message of reader.readMessages({topics:['/rosout']})) {
+        const failures = [];
+        for (const [index, file] of selected.entries()) {
           if (token !== loadToken) return;
-          logs.push(decodeLog(message.data));
-          if (++count % 1000 === 0) { $('status').textContent = `正在讀取 ${file.name}：${count.toLocaleString()} 筆…`; await new Promise(resolve => setTimeout(resolve, 0)); }
+          $('status').textContent = `正在讀取 ${file.name}（${index + 1}/${selected.length}）…`;
+          try {
+            const reader = await McapIndexedReader.Initialize({readable:new BlobReadable(file)});
+            const channels = [...reader.channelsById.values()].filter(c => c.topic === '/rosout');
+            if (!channels.length) throw new Error('沒有 /rosout topic');
+            for (const channel of channels) {
+              const schema = reader.schemasById.get(channel.schemaId);
+              if (channel.messageEncoding !== 'cdr' || !schema?.name?.includes('rcl_interfaces/msg/Log'))
+                throw new Error(`不支援 ${channel.messageEncoding} / ${schema?.name || '未知 schema'}`);
+            }
+            let count = 0;
+            for await (const message of reader.readMessages({topics:['/rosout']})) {
+              if (token !== loadToken) return;
+              logs.push({...decodeLog(message.data), bag:file.name});
+              if (++count % 1000 === 0) { $('status').textContent = `正在讀取 ${file.name}：${count.toLocaleString()} 筆…`; await new Promise(resolve => setTimeout(resolve, 0)); }
+            }
+          } catch (error) { failures.push(`${file.name}：${error.message || String(error)}`); }
         }
         if (token !== loadToken) return;
+        logs.sort((a, b) => a.time - b.time);
+        $('error').textContent = failures.join('\n');
         render();
-      } catch (error) { if (token === loadToken) { $('status').textContent = '讀取失敗'; $('error').textContent = error.message || String(error); } }
+      } catch (error) {
+        if (token === loadToken) { $('status').textContent = '讀取失敗'; $('error').textContent = error.message || String(error); }
+      }
     }
 
     drop.addEventListener('click', () => fileInput.click());
     drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
-    fileInput.addEventListener('change', e => load(e.target.files[0]));
+    fileInput.addEventListener('change', e => load(e.target.files));
     drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
     drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-    drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); load(e.dataTransfer.files[0]); });
+    drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); load(e.dataTransfer.files); });
     $('search').addEventListener('input', render); $('level').addEventListener('change', render);
     $('download').addEventListener('click', () => {
-      const cells = [['time','level','name','message','file','function','line'], ...filtered().map(x => [displayTime(x.time),levels[x.level] || x.level,x.name,x.msg,x.file,x.func,x.line])];
+      const cells = [['time','level','name','message','mcap','file','function','line'], ...filtered().map(x => [displayTime(x.time),levels[x.level] || x.level,x.name,x.msg,x.bag,x.file,x.func,x.line])];
       const csv = '\ufeff' + cells.map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\r\n');
       const url = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-      const a = document.createElement('a'); a.href = url; a.download = (currentFile.replace(/\.mcap$/i,'') || 'rosout') + '-rosout.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const a = document.createElement('a'); a.href = url; a.download = (loadedFiles.length === 1 ? loadedFiles[0].replace(/\.mcap$/i, '') : 'rosout-merged') + '-rosout.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   </script>
 </body>
