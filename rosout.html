@@ -38,7 +38,7 @@
   </div>
   <p id="status">尚未載入檔案</p><p id="error" role="alert"></p>
   <div class="table-wrap"><table><thead><tr><th>時間</th><th>等級</th><th>Logger</th><th>訊息</th><th>來源</th></tr></thead><tbody id="rows"></tbody></table></div>
-  <p class="hint">需要網路連線載入 MCAP 解壓縮函式庫；支援 ROS 2 的 CDR 格式 rcl_interfaces/msg/Log。</p>
+  <p class="hint">需要網路連線載入 MCAP 函式庫；支援未壓縮的 ROS 2 CDR rcl_interfaces/msg/Log。</p>
   <script type="module">
     const $ = id => document.getElementById(id);
     const drop = $('drop'), fileInput = $('file');
@@ -85,10 +85,10 @@
       const token = ++loadToken; logs = []; currentFile = file.name; $('rows').replaceChildren(); $('error').textContent = ''; $('download').disabled = true;
       $('status').textContent = `正在讀取 ${file.name}…`;
       try {
-        const [{BlobReadable}, {McapIndexedReader}, {loadDecompressHandlers}] = await Promise.all([
-          import('https://esm.sh/@mcap/browser@2.1.2'), import('https://esm.sh/@mcap/core@2.1.2'), import('https://esm.sh/@mcap/support@2.1.2')
+        const [{BlobReadable}, {McapIndexedReader}] = await Promise.all([
+          import('https://esm.sh/@mcap/browser@1.1.0'), import('https://esm.sh/@mcap/core@2.1.6')
         ]);
-        const reader = await McapIndexedReader.Initialize({readable:new BlobReadable(file), decompressHandlers:await loadDecompressHandlers()});
+        const reader = await McapIndexedReader.Initialize({readable:new BlobReadable(file)});
         const channels = [...reader.channelsById.values()].filter(c => c.topic === '/rosout');
         if (!channels.length) throw new Error('此 MCAP 沒有 /rosout topic。');
         for (const channel of channels) {
