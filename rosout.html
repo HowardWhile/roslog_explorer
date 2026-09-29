@@ -42,14 +42,25 @@
     .timeline-panel { padding: 1.4rem 1.3rem 1.3rem; border-bottom: 1px solid #dce6ee; }
     .timeline-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: .9rem; }
     .timeline-heading h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.025em; }
-    .timeline-legend { display: flex; flex-wrap: wrap; gap: .45rem 1.1rem; color: #536c80; font-size: .8rem; }
-    .timeline-legend span::before { content: ""; display: inline-block; width: .55rem; height: .55rem; margin-right: .4rem; border-radius: 2px; background: var(--swatch); vertical-align: 1px; }
-    .timeline-frame { padding: .65rem .8rem .35rem; border: 1px solid #d5e2ed; border-radius: .55rem; background: #f5f9fc; }
+    .timeline-heading p { margin: 0; color: #60798e; font-size: .82rem; }
+    .timeline-frame { display: grid; grid-template-columns: 102px minmax(0, 1fr); column-gap: .8rem; padding: .8rem; border: 1px solid #d5e2ed; border-radius: .55rem; background: #f5f9fc; }
+    .track-labels { display: flex; flex-direction: column; height: 152px; color: #536c80; font-size: .76rem; font-weight: 650; }
+    .track-labels span { height: 25px; display: flex; align-items: center; gap: .4rem; white-space: nowrap; }
+    .track-labels span::before { content: ""; width: .45rem; height: .45rem; flex: none; border-radius: 2px; background: var(--swatch); }
+    .track-labels span:last-child { margin-top: 16px; }
+    .timeline-plot { position: relative; min-width: 0; }
     #timeline { display: block; width: 100%; height: 152px; cursor: crosshair; touch-action: none; }
     #timeline:focus-visible { outline: 3px solid #2d6dc0; }
-    .timeline-axis { display: flex; justify-content: space-between; gap: 1rem; padding-top: .35rem; color: #60798e; font: .75rem/1.4 "IBM Plex Mono", monospace; white-space: pre-line; }
+    .timeline-tooltip { position: absolute; top: 0; transform: translateX(-50%); z-index: 2; pointer-events: none; background: #173b61; color: white; padding: .45rem .6rem; border-radius: .35rem; font: .75rem/1.5 "IBM Plex Mono", monospace; white-space: pre; box-shadow: 0 4px 12px #173b6133; }
+    .timeline-tooltip[hidden] { display: none; }
+    .timeline-axis { grid-column: 2; display: flex; justify-content: space-between; gap: 1rem; padding-top: .35rem; color: #60798e; font: .75rem/1.4 "IBM Plex Mono", monospace; white-space: pre-line; }
     .timeline-axis span:nth-child(2) { text-align: center; }
     .timeline-axis span:last-child { text-align: right; }
+    .selection-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; min-height: 2.5rem; margin-top: .55rem; }
+    #selection-summary { color: #496176; font-size: .85rem; }
+    .selection-bar.has-selection #selection-summary { color: #235c9e; font-weight: 650; }
+    #reset-time { padding: .35rem .65rem; border: 0; background: transparent; color: #235c9e; font-weight: 650; cursor: pointer; }
+    #reset-time:disabled { display: none; }
     .advanced-time { margin-top: .8rem; }
     .advanced-time summary { display: inline-flex; align-items: center; gap: .55rem; color: #235c9e; font-size: .87rem; font-weight: 650; cursor: pointer; list-style: none; }
     .advanced-time summary::-webkit-details-marker { display: none; }
@@ -59,9 +70,7 @@
     .time-selection-note:empty { display: none; }
     .time-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; padding-top: .95rem; }
     .time-controls .field { flex: 1 1 220px; }
-    #reset-time { height: 2.75rem; padding: 0 .9rem; border: 1px solid #bdcedc; border-radius: .45rem; background: white; color: #235c9e; cursor: pointer; }
-    #reset-time:disabled { color: #9aaab7; cursor: not-allowed; }
-    .timeline-help { margin: .65rem 0 0; color: #637c90; font-size: .8rem; }
+    .timeline-help { margin: .15rem 0 0; color: #637c90; font-size: .8rem; }
     .results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 1rem 1.3rem .8rem; }
     h2 { margin: 0; font-size: 1rem; } .results-note { color: #71869a; font-size: .8rem; }
     .table-wrap { overflow: auto; max-height: 68vh; min-height: 16rem; }
@@ -79,7 +88,7 @@
     td.level { font-size: .76rem; font-weight: 700; }
     .DEBUG { color: #667e91; } .INFO { color: #286497; } .WARN { color: #9c600b; } .ERROR, .FATAL { color: #b33139; }
     .footnote { margin: 1rem .2rem 0; color: #637c90; font-size: .8rem; line-height: 1.5; }
-    @media (max-width: 760px) { .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, #download { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
+    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, #download { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -98,12 +107,16 @@
         <button id="download" disabled>下載結果 CSV</button>
       </div>
       <section class="timeline-panel" aria-label="時間篩選">
-        <div class="timeline-heading"><h2>時間分布</h2><div class="timeline-legend"><span style="--swatch:#9aafc1">訊息量</span><span style="--swatch:#d89634">WARN 發生位置</span><span style="--swatch:#c3444b">ERROR / FATAL 發生位置</span></div></div>
-        <div class="timeline-frame"><canvas id="timeline" height="152" role="img" aria-label="依時間排列的紀錄數量與嚴重程度分布"></canvas>
-        <div class="timeline-axis"><span id="time-min">—</span><span id="time-mid">—</span><span id="time-max">—</span></div></div>
-        <p class="timeline-help">在時間條上拖曳選取範圍。上方兩條軌道標示 WARN 與 ERROR／FATAL，柱高表示該時段的訊息量。</p>
+        <div class="timeline-heading"><h2>時間分布</h2><p>拖曳時間軌，聚焦要查看的紀錄</p></div>
+        <div class="timeline-frame">
+          <div class="track-labels" aria-hidden="true"><span style="--swatch:#d89634">WARN</span><span style="--swatch:#c3444b">ERROR / FATAL</span><span style="--swatch:#9aafc1">訊息量</span></div>
+          <div class="timeline-plot"><canvas id="timeline" height="152" role="img" aria-label="依時間排列的紀錄數量與嚴重程度分布"></canvas><div id="timeline-tooltip" class="timeline-tooltip" hidden></div></div>
+          <div class="timeline-axis"><span id="time-min">—</span><span id="time-mid">—</span><span id="time-max">—</span></div>
+        </div>
+        <div id="selection-bar" class="selection-bar"><span id="selection-summary">顯示全部時間</span><button id="reset-time" type="button" disabled>清除時間範圍</button></div>
+        <p class="timeline-help">滑過時間軌查看各時段的筆數。需要精確設定時，展開下方選項。</p>
         <details class="advanced-time"><summary>進階時間設定 <span id="time-selection-note" class="time-selection-note"></span></summary>
-          <div class="time-controls"><label class="field" for="time-start">開始時間<input id="time-start" type="datetime-local" step="0.001"></label><label class="field" for="time-end">結束時間<input id="time-end" type="datetime-local" step="0.001"></label><button id="reset-time" type="button" disabled>清除時間範圍</button></div>
+          <div class="time-controls"><label class="field" for="time-start">開始時間<input id="time-start" type="datetime-local" step="0.001"></label><label class="field" for="time-end">結束時間<input id="time-end" type="datetime-local" step="0.001"></label></div>
         </details>
       </section>
       <div class="results-head"><h2>紀錄列表</h2><span class="results-note">拖曳欄名邊緣調整寬度；最多顯示 5,000 筆</span></div>
@@ -209,7 +222,7 @@
       append(text.slice(offset).replace(/\x1b[\][^\x07]*(?:\x07|\x1b\\\\)/g, ''));
     }
     const timeline = $('timeline');
-    let timeExtent = null, dragStart = null, dragCurrent = null;
+    let timeExtent = null, dragStart = null, dragCurrent = null, timelineBins = [];
     function localInputTime(ms) {
       const date = new Date(ms - new Date(ms).getTimezoneOffset() * 60000);
       return date.toISOString().slice(0, 23);
@@ -243,6 +256,7 @@
         const i = Math.min(bins.length - 1, Math.max(0, Math.floor((log.time - min) / span * bins.length)));
         bins[i][log.level >= 40 ? 2 : log.level >= 30 ? 1 : 0]++;
       }
+      timelineBins = bins;
       const peak = Math.max(1, ...bins.map(bin => bin.reduce((a, b) => a + b, 0)));
       const step = width / bins.length;
       bins.forEach((bin, i) => {
@@ -288,6 +302,9 @@
       const active = Boolean($('time-start').value || $('time-end').value);
       $('reset-time').disabled = !active;
       $('time-selection-note').textContent = active ? '（已設定範圍）' : '';
+      $('selection-bar').classList.toggle('has-selection', active);
+      const [start, end] = timeBounds();
+      $('selection-summary').textContent = active ? `${Number.isFinite(start) ? displayTimelineTime(start).replace('\n', ' ') : '最早'} ～ ${Number.isFinite(end) ? displayTimelineTime(end).replace('\n', ' ') : '最晚'}` : '顯示全部時間';
       drawTimeline(); render();
     }
     function timelineTime(event) {
@@ -302,9 +319,19 @@
       timeline.setPointerCapture(event.pointerId);
     });
     timeline.addEventListener('pointermove', event => {
-      if (dragStart === null) return;
-      dragCurrent = timelineTime(event); drawTimeline();
+      if (!timeExtent || !timelineBins.length) return;
+      if (dragStart !== null) { dragCurrent = timelineTime(event); drawTimeline(); $('timeline-tooltip').hidden = true; return; }
+      const rect = timeline.getBoundingClientRect();
+      const fraction = Math.min(.999999, Math.max(0, (event.clientX - rect.left) / rect.width));
+      const index = Math.floor(fraction * timelineBins.length);
+      const bin = timelineBins[index], span = Math.max(1, timeExtent[1] - timeExtent[0]);
+      const from = timeExtent[0] + index / timelineBins.length * span;
+      const tip = $('timeline-tooltip');
+      tip.textContent = `${displayTimelineTime(from).replace('\n', ' ')}\n${bin.reduce((a, b) => a + b, 0)} 筆  WARN ${bin[1]}  ERROR/FATAL ${bin[2]}`;
+      tip.style.left = `${Math.min(rect.width - 90, Math.max(90, event.clientX - rect.left))}px`;
+      tip.hidden = false;
     });
+    timeline.addEventListener('pointerleave', () => { $('timeline-tooltip').hidden = true; });
     timeline.addEventListener('pointerup', event => {
       if (dragStart === null) return;
       const end = timelineTime(event);
@@ -350,6 +377,7 @@
       if (!selected.length) return;
       const token = ++loadToken; logs = []; loadedFiles = selected.map(file => file.name);
       $('time-start').value = $('time-end').value = ''; updateTimeControls(); $('reset-time').disabled = true; $('time-selection-note').textContent = '';
+      $('selection-bar').classList.remove('has-selection'); $('selection-summary').textContent = '顯示全部時間';
       $('rows').replaceChildren(); $('error').textContent = ''; $('download').disabled = true;
       $('status').textContent = `正在讀取 ${selected.length} 個檔案…`;
       try {
