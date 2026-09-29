@@ -36,7 +36,10 @@
     #status { color: #526b80; } #error { color: #ae3039; white-space: pre-wrap; }
     .filters { display: flex; flex-wrap: wrap; align-items: start; gap: .8rem; padding: 1.1rem 1.3rem; border-bottom: 1px solid #dce6ee; }
     .field { display: grid; gap: .4rem; color: #496176; font-size: .82rem; font-weight: 650; }
-    .search-field { flex: 1 1 340px; position: relative; }
+    .search-field { flex: 1 1 340px; position: relative; min-width: 0; }
+    .search-field summary { color: #496176; font-size: .82rem; font-weight: 650; cursor: pointer; }
+    .search-field summary::marker { color: #235c9e; }
+    .search-content { display: grid; gap: .4rem; padding-top: .4rem; }
     .logger-suggestions { position: absolute; top: 5rem; left: 0; right: 0; z-index: 5; max-height: 14rem; overflow: auto; border: 1px solid #bdcedc; border-radius: .45rem; background: white; box-shadow: 0 8px 24px #173b6129; }
     .logger-suggestions[hidden] { display: none; }
     .logger-suggestions button { display: block; width: 100%; border: 0; background: white; color: #193047; padding: .55rem .85rem; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
@@ -115,7 +118,7 @@
     td.level { font-size: .76rem; font-weight: 700; }
     .DEBUG { color: #667e91; } .INFO { color: #286497; } .WARN { color: #9c600b; } .ERROR, .FATAL { color: #b33139; }
     .footnote { margin: 1rem .2rem 0; color: #637c90; font-size: .8rem; line-height: 1.5; }
-    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
+    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, .search-field { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -129,7 +132,7 @@
         <div class="load-details"><span class="section-label">讀取狀態</span><p id="status" aria-live="polite">尚未載入檔案。請選擇一個或多個 .mcap 檔。</p><p id="error" role="alert"></p></div>
       </div>
       <div class="filters">
-        <div class="field search-field"><label for="search">搜尋條件</label><input id="search" type="search" placeholder="輸入關鍵字，按 Enter 新增標籤" aria-describedby="search-help"><div id="logger-suggestions" class="logger-suggestions" aria-label="Logger 名稱建議" hidden></div><div id="search-tags" class="search-tags" aria-label="搜尋條件"></div><span id="search-help" class="search-help">一般標籤要全部符合；加上 + 也會顯示符合該標籤的紀錄；加上 - 則排除。例：robot_driver、+taskmgr 會顯示兩者的紀錄。</span></div>
+        <details class="search-field" open><summary>搜尋條件<span id="search-count"></span></summary><div class="search-content"><input id="search" type="search" placeholder="輸入關鍵字，按 Enter 新增標籤" aria-label="搜尋條件" aria-describedby="search-help"><div id="logger-suggestions" class="logger-suggestions" aria-label="Logger 名稱建議" hidden></div><div id="search-tags" class="search-tags" aria-label="搜尋條件"></div><span id="search-help" class="search-help">一般標籤要全部符合；加上 + 也會顯示符合該標籤的紀錄；加上 - 則排除。例：robot_driver、+taskmgr 會顯示兩者的紀錄。</span></div></details>
         <label class="field" for="level">Log 等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
       </div>
       <details id="timeline-section" class="timeline-panel">
@@ -527,6 +530,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     }
     function renderSearchTags() {
       const container = $('search-tags');
+      $('search-count').textContent = searchTerms.length ? `（${searchTerms.length} 個標籤）` : '';
       container.replaceChildren();
       searchTerms.forEach((term, index) => {
         const tag = document.createElement('span'); tag.className = 'search-tag' + (term.startsWith('+') ? ' or-tag' : term.startsWith('-') ? ' exclude-tag' : '');
