@@ -36,19 +36,24 @@
     #status { color: #526b80; } #error { color: #ae3039; white-space: pre-wrap; }
     .filters { display: flex; flex-wrap: wrap; align-items: start; gap: .8rem; padding: 1.1rem 1.3rem; border-bottom: 1px solid #dce6ee; }
     .field { display: grid; gap: .4rem; color: #496176; font-size: .82rem; font-weight: 650; }
-    .search-field { flex: 1 1 340px; }
+    .search-field { flex: 1 1 340px; position: relative; }
+    .logger-suggestions { position: absolute; top: 5rem; left: 0; right: 0; z-index: 5; max-height: 14rem; overflow: auto; border: 1px solid #bdcedc; border-radius: .45rem; background: white; box-shadow: 0 8px 24px #173b6129; }
+    .logger-suggestions[hidden] { display: none; }
+    .logger-suggestions button { display: block; width: 100%; border: 0; background: white; color: #193047; padding: .55rem .85rem; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+    .logger-suggestions button:hover, .logger-suggestions button.active { background: #e7f1fb; }
+    .search-help { color: #60798e; font-size: .78rem; font-weight: 400; line-height: 1.5; }
     .search-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
     .search-tags:empty { display: none; }
-    .search-tag { display: inline-flex; align-items: center; max-width: 100%; border: 1px solid #9bbbd7; border-radius: .4rem; background: #eaf3fb; color: #235c9e; }
+    .search-tag { display: inline-flex; align-items: center; max-width: 100%; border: 1px solid #b7c4cf; border-radius: .4rem; background: #eef2f5; color: #40586c; }
     .search-tag button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: .3rem .5rem; }
     .search-tag .tag-text { overflow-wrap: anywhere; text-align: left; }
-    .search-tag .tag-remove { border-left: 1px solid #b9d0e3; font-size: 1.1rem; line-height: 1; }
-    .search-tag.or-tag { background: #edf3ff; border-color: #9aaee0; color: #344f9a; }
+    .search-tag .tag-remove { border-left: 1px solid currentColor; font-size: 1.1rem; line-height: 1; }
+    .search-tag.or-tag { background: #e3f5e9; border-color: #78b892; color: #17633f; }
     .search-tag.exclude-tag { background: #fff1ef; border-color: #e0aaa4; color: #963d38; }
     .search-tag input { width: min(16rem, 60vw); height: 2rem; border: 0; background: white; padding: 0 .4rem; }
     .field input, .field select { height: 2.75rem; border: 1px solid #bdcedc; border-radius: .45rem; background: white; color: #193047; padding: 0 .85rem; min-width: 0; font-size: .93rem; }
     .field input::placeholder { color: #798da0; }
-    #download { margin-top: 1.45rem; height: 2.75rem; border: 1px solid #235c9e; border-radius: .45rem; background: #235c9e; color: white; padding: 0 1rem; font-weight: 650; cursor: pointer; }
+    #download { height: 2.75rem; border: 1px solid #235c9e; border-radius: .45rem; background: #235c9e; color: white; padding: 0 1rem; font-weight: 650; cursor: pointer; }
     #download:hover:not(:disabled) { background: #184979; }
     #download:disabled { background: #e2eaf0; border-color: #e2eaf0; color: #8395a4; cursor: not-allowed; }
     .timeline-panel { border-bottom: 1px solid #dce6ee; }
@@ -89,7 +94,8 @@
     .time-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; padding-top: .95rem; }
     .time-controls .field { flex: 1 1 220px; }
     .timeline-help { margin: .15rem 0 0; color: #637c90; font-size: .8rem; }
-    .results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 1rem 1.3rem .8rem; }
+    .results-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem 1rem; padding: 1rem 1.3rem .8rem; }
+    .results-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem 1rem; }
     h2 { margin: 0; font-size: 1rem; } .results-note { color: #71869a; font-size: .8rem; }
     .table-wrap { overflow-x: hidden; overflow-y: auto; max-height: 68vh; min-height: 16rem; }
     .table-horizontal-scroll { position: sticky; bottom: 0; z-index: 3; height: 18px; overflow-x: auto; overflow-y: hidden; background: #eaf1f7; border-top: 1px solid #cbd9e5; }
@@ -109,7 +115,7 @@
     td.level { font-size: .76rem; font-weight: 700; }
     .DEBUG { color: #667e91; } .INFO { color: #286497; } .WARN { color: #9c600b; } .ERROR, .FATAL { color: #b33139; }
     .footnote { margin: 1rem .2rem 0; color: #637c90; font-size: .8rem; line-height: 1.5; }
-    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, #download { flex: 1 1 100%; } #download { margin-top: 0; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
+    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -123,9 +129,8 @@
         <div class="load-details"><span class="section-label">讀取狀態</span><p id="status" aria-live="polite">尚未載入檔案。請選擇一個或多個 .mcap 檔。</p><p id="error" role="alert"></p></div>
       </div>
       <div class="filters">
-        <div class="field search-field"><label for="search">搜尋條件（Enter 新增；一般 AND、+ 擴充 OR、- 排除）</label><input id="search" type="search" placeholder="Logger、訊息、來源檔案或 MCAP；按 Enter 新增"><div id="search-tags" class="search-tags" aria-label="搜尋條件"></div></div>
+        <div class="field search-field"><label for="search">搜尋條件</label><input id="search" type="search" placeholder="輸入關鍵字，按 Enter 新增標籤" aria-describedby="search-help"><div id="logger-suggestions" class="logger-suggestions" aria-label="Logger 名稱建議" hidden></div><div id="search-tags" class="search-tags" aria-label="搜尋條件"></div><span id="search-help" class="search-help">一般標籤要全部符合；加上 + 也會顯示符合該標籤的紀錄；加上 - 則排除。例：robot_driver、+taskmgr 會顯示兩者的紀錄。</span></div>
         <label class="field" for="level">Log 等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
-        <button id="download" disabled>下載結果 CSV</button>
       </div>
       <details id="timeline-section" class="timeline-panel">
         <summary class="timeline-heading"><strong>時間分布</strong><span id="timeline-toggle-hint">載入檔案後顯示</span></summary>
@@ -140,7 +145,7 @@
           <div class="time-controls"><label class="field" for="time-start">開始時間<input id="time-start" type="datetime-local" step="0.001"></label><label class="field" for="time-end">結束時間<input id="time-end" type="datetime-local" step="0.001"></label></div>
         </details></div>
       </details>
-      <div class="results-head"><h2>紀錄列表</h2><span class="results-note">拖曳欄名邊緣調整寬度；最多顯示 5,000 筆</span></div>
+      <div class="results-head"><h2>紀錄列表</h2><div class="results-actions"><span class="results-note">拖曳欄名邊緣調整寬度；最多顯示 5,000 筆</span><button id="download" type="button" disabled>下載結果 CSV</button></div></div>
       <div id="table-wrap" class="table-wrap"><table id="log-table"><colgroup><col><col><col><col><col><col></colgroup><thead><tr><th scope="col">時間</th><th scope="col">等級</th><th scope="col">Logger</th><th scope="col">訊息</th><th scope="col">MCAP</th><th scope="col">來源</th></tr></thead><tbody id="rows"></tbody></table></div>
       <div id="table-horizontal-scroll" class="table-horizontal-scroll" role="scrollbar" aria-label="紀錄列表水平捲動" aria-orientation="horizontal" aria-controls="table-wrap" aria-valuemin="0" tabindex="0" hidden><div id="table-horizontal-spacer" class="table-horizontal-spacer"></div></div>
     </section>
@@ -227,6 +232,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     const drop = $('drop'), fileInput = $('file'), folderInput = $('folder');
     let logs = [], loadedFiles = [], loadToken = 0;
     const searchTerms = [];
+    let loggerNames = [], suggestedNames = [], suggestionIndex = -1;
     const levels = {10:'DEBUG', 20:'INFO', 30:'WARN', 40:'ERROR', 50:'FATAL'};
     const decoder = new TextDecoder();
     const table = $('log-table'), tableWrap = $('table-wrap');
@@ -482,7 +488,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     window.addEventListener('resize', drawTimeline);
     updateTimeControls();
     function matchesSearchTerms(log, terms) {
-      const fields = [log.name, log.msg, log.file, log.func, log.bag]
+      const fields = [levels[log.level] || String(log.level), log.name, log.msg, log.file, log.func, log.bag]
         .map(value => String(value ?? '').toLocaleLowerCase());
       const includes = term => fields.some(value => value.includes(term.toLocaleLowerCase()));
       const required = terms.filter(term => !term.startsWith('+') && !term.startsWith('-'));
@@ -496,6 +502,28 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     function filtered() {
       const min = Number($('level').value), [start, end] = timeBounds();
       return logs.filter(x => x.time >= start && x.time <= end && x.level >= min && matchesSearchTerms(x, searchTerms));
+    }
+    function addSearchTerm(term) {
+      if (!term || term === '+' || term === '-') return;
+      searchTerms.push(term);
+      $('search').value = '';
+      $('logger-suggestions').hidden = true;
+      renderSearchTags(); render();
+    }
+    function renderLoggerSuggestions() {
+      const raw = $('search').value.trim();
+      const prefix = /^[+-]/.test(raw) ? raw[0] : '';
+      const query = raw.slice(prefix.length).toLocaleLowerCase();
+      const list = $('logger-suggestions');
+      list.replaceChildren(); suggestionIndex = -1;
+      suggestedNames = query ? loggerNames.filter(name => name.toLocaleLowerCase().includes(query)).slice(0, 12) : [];
+      for (const name of suggestedNames) {
+        const button = document.createElement('button'); button.type = 'button'; button.textContent = prefix + name;
+        button.addEventListener('pointerdown', event => event.preventDefault());
+        button.addEventListener('click', () => addSearchTerm(prefix + name));
+        list.append(button);
+      }
+      list.hidden = !suggestedNames.length;
     }
     function renderSearchTags() {
       const container = $('search-tags');
@@ -551,7 +579,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
         .filter(item => item.file && /\.mcap$/i.test(item.name));
       if (!selected.length) { $('status').textContent = '未找到 MCAP 檔案'; $('error').textContent = '找不到 .mcap 檔案。請拖入含有 MCAP 的資料夾，或直接選擇檔案。'; return; }
       selected.sort((a, b) => a.name.localeCompare(b.name, 'zh-TW', {numeric:true}));
-      const token = ++loadToken; logs = []; loadedFiles = selected.map(item => item.name);
+      const token = ++loadToken; logs = []; loggerNames = []; renderLoggerSuggestions(); loadedFiles = selected.map(item => item.name);
       timelineSection.open = false;
       $('time-start').value = $('time-end').value = ''; updateTimeControls(); $('reset-time').disabled = true; $('time-selection-note').textContent = '';
       $('selection-bar').classList.remove('has-selection'); $('selection-summary').textContent = '顯示全部時間';
@@ -582,6 +610,8 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
         }
         if (token !== loadToken) return;
         logs.sort((a, b) => a.time - b.time);
+        loggerNames = [...new Set(logs.map(log => log.name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+        renderLoggerSuggestions();
         timelineSection.open = logs.length > 0;
         updateTimeControls();
         $('error').textContent = failures.join('\n');
@@ -674,13 +704,25 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       try { await load(files); }
       catch (error) { $('status').textContent = '無法載入檔案'; $('error').textContent = error.message || String(error); }
     });
+    $('search').addEventListener('input', renderLoggerSuggestions);
+    $('search').addEventListener('focus', renderLoggerSuggestions);
+    $('search').addEventListener('blur', () => { $('logger-suggestions').hidden = true; });
     $('search').addEventListener('keydown', event => {
-      if (event.key !== 'Enter' || event.isComposing) return;
+      if (event.isComposing) return;
+      if (event.key === 'Escape') { $('logger-suggestions').hidden = true; return; }
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        if (!suggestedNames.length || $('logger-suggestions').hidden) return;
+        event.preventDefault();
+        suggestionIndex = (suggestionIndex + (event.key === 'ArrowDown' ? 1 : -1) + suggestedNames.length) % suggestedNames.length;
+        [...$('logger-suggestions').children].forEach((button, index) => button.classList.toggle('active', index === suggestionIndex));
+        $('logger-suggestions').children[suggestionIndex].scrollIntoView({block:'nearest'});
+        return;
+      }
+      if (event.key !== 'Enter') return;
       event.preventDefault();
-      const term = $('search').value.trim();
-      if (!term || term === '+' || term === '-') return;
-      searchTerms.push(term); $('search').value = '';
-      renderSearchTags(); render();
+      const raw = $('search').value.trim();
+      const prefix = /^[+-]/.test(raw) ? raw[0] : '';
+      addSearchTerm(suggestionIndex >= 0 && !$('logger-suggestions').hidden ? prefix + suggestedNames[suggestionIndex] : raw);
     });
     $('level').addEventListener('change', render);
     $('download').addEventListener('click', () => {
