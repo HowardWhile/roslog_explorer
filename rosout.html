@@ -5,46 +5,127 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MCAP /rosout 檢視器</title>
   <style>
-    :root { font-family: system-ui, sans-serif; color-scheme: light; }
-    body { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; color: #18212b; }
-    h1 { margin-bottom: .25rem; }
-    .hint { color: #586575; }
-    #drop { border: 2px dashed #8193aa; border-radius: 12px; padding: 2.5rem; text-align: center; cursor: pointer; background: #f5f8fc; }
-    #drop.over { border-color: #1769c2; background: #e7f2ff; }
+    :root { font-family: "IBM Plex Sans", "Noto Sans TC", system-ui, sans-serif; color: #193047; background: #eaf0f5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input, select { font: inherit; }
+    :focus-visible { outline: 3px solid #2d6dc0; outline-offset: 3px; }
+    .masthead { background: #173b61; color: white; padding: 1rem clamp(1rem, 3vw, 3rem); display: flex; justify-content: space-between; align-items: center; }
+    .brand { display: flex; align-items: center; gap: .8rem; font-weight: 700; letter-spacing: -.02em; }
+    .brand-mark { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 1px solid #91b5d8; border-radius: .45rem; color: #a8d9ff; font: 700 1.2rem monospace; }
+    .masthead-note { color: #bdd3e7; font-size: .85rem; }
+    main { max-width: 1600px; padding: clamp(1.2rem, 3vw, 3rem); margin: auto; }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 1.8rem; }
+    h1 { font-size: clamp(2.1rem, 4vw, 3.5rem); line-height: 1.1; letter-spacing: -.055em; margin: 0 0 .5rem; }
+    .intro p { margin: 0; max-width: 60ch; color: #52697e; line-height: 1.6; }
+    .privacy { padding: .45rem .8rem; border-radius: 99px; background: #dbe9f4; color: #355c7c; white-space: nowrap; font-size: .82rem; }
+    .workspace { background: white; border: 1px solid #cad8e4; border-radius: 1rem; overflow: hidden; box-shadow: 0 12px 36px #23466312; }
+    .load-panel { padding: 1.3rem; display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.3rem; border-bottom: 1px solid #dce6ee; }
+    #drop { border: 1.5px dashed #87a8c4; border-radius: .7rem; background: #f2f8fd; min-height: 8.5rem; padding: 1.2rem; display: flex; align-items: center; gap: 1.2rem; cursor: pointer; }
+    #drop:hover, #drop.over { background: #e5f1fc; border-color: #326cc0; }
+    .upload-icon { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; flex: none; border-radius: .6rem; background: #dcecff; color: #2f65ad; font-size: 1.8rem; }
+    .drop-title { display: block; font-weight: 700; font-size: 1.1rem; }
+    .drop-sub { display: block; color: #60798e; font-size: .87rem; margin-top: .3rem; line-height: 1.5; }
     #file { display: none; }
-    .bar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin: 1rem 0; }
-    input[type=search] { flex: 1; min-width: 220px; padding: .55rem; }
-    select, button { padding: .55rem; }
-    #status { color: #586575; }
-    #error { color: #a52a2a; white-space: pre-wrap; }
-    .table-wrap { overflow: auto; max-height: 70vh; }
-    table { border-collapse: collapse; width: 100%; font-size: .9rem; }
-    th, td { padding: .55rem; border-bottom: 1px solid #dce3eb; text-align: left; vertical-align: top; }
-    th { position: sticky; top: 0; background: #eef3f8; }
-    td.message { min-width: 340px; white-space: pre-wrap; overflow-wrap: anywhere; }
-    .level { font-weight: 700; }
-    .ERROR, .FATAL { color: #b42318; }
-    .WARN { color: #985d00; }
+    .load-details { display: flex; flex-direction: column; justify-content: center; gap: .6rem; min-width: 0; }
+    .section-label { font-weight: 700; font-size: .88rem; }
+    #status, #error { margin: 0; overflow-wrap: anywhere; line-height: 1.55; }
+    #status { color: #526b80; } #error { color: #ae3039; white-space: pre-wrap; }
+    .filters { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; padding: 1.1rem 1.3rem; border-bottom: 1px solid #dce6ee; }
+    .field { display: grid; gap: .4rem; color: #496176; font-size: .82rem; font-weight: 650; }
+    .search-field { flex: 1 1 340px; }
+    .field input, .field select { height: 2.75rem; border: 1px solid #bdcedc; border-radius: .45rem; background: white; color: #193047; padding: 0 .85rem; min-width: 0; font-size: .93rem; }
+    .field input::placeholder { color: #798da0; }
+    #download { height: 2.75rem; border: 1px solid #235c9e; border-radius: .45rem; background: #235c9e; color: white; padding: 0 1rem; font-weight: 650; cursor: pointer; }
+    #download:hover:not(:disabled) { background: #184979; }
+    #download:disabled { background: #e2eaf0; border-color: #e2eaf0; color: #8395a4; cursor: not-allowed; }
+    .results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 1rem 1.3rem .8rem; }
+    h2 { margin: 0; font-size: 1rem; } .results-note { color: #71869a; font-size: .8rem; }
+    .table-wrap { overflow: auto; max-height: 68vh; min-height: 16rem; }
+    table { border-collapse: separate; border-spacing: 0; width: max(100%, var(--table-width)); table-layout: fixed; font-size: .87rem; }
+    th, td { padding: .8rem .9rem; border-bottom: 1px solid #e3eaf0; text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; z-index: 1; background: #f0f5f9; color: #536c80; font-size: .76rem; overflow: visible; }
+    .resize-handle { position: absolute; top: 0; right: -7px; width: 14px; height: 100%; padding: 0; border: 0; background: transparent; cursor: col-resize; touch-action: none; z-index: 2; }
+    .resize-handle::after { content: ""; display: block; width: 2px; height: 1.2rem; margin: auto; background: #a4b9ca; }
+    .resize-handle:hover::after, .resize-handle:focus-visible::after, .resizing .resize-handle::after { background: #2869b9; }
+    body.resizing { cursor: col-resize; user-select: none; }
+    tbody tr:hover { background: #f5faff; }
+    td:first-child { white-space: nowrap; color: #536c80; font: .78rem "IBM Plex Mono", monospace; }
+    td { overflow-wrap: anywhere; }
+    td.message { white-space: pre-wrap; line-height: 1.5; }
+    td.level { font-size: .76rem; font-weight: 700; }
+    .DEBUG { color: #667e91; } .INFO { color: #286497; } .WARN { color: #9c600b; } .ERROR, .FATAL { color: #b33139; }
+    .footnote { margin: 1rem .2rem 0; color: #637c90; font-size: .8rem; line-height: 1.5; }
+    @media (max-width: 760px) { .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, #download { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
   </style>
 </head>
 <body>
-  <h1>MCAP /rosout 檢視器</h1>
-  <p class="hint">將一個或多個 .mcap 檔拖入下方，或點擊選擇檔案。檔案在瀏覽器內讀取，不會上傳。</p>
-  <div id="drop" role="button" tabindex="0">拖入 MCAP 檔案，或點此選擇<input id="file" type="file" accept=".mcap" multiple></div>
-  <div class="bar">
-    <input id="search" type="search" placeholder="搜尋 logger、訊息或來源檔案" aria-label="搜尋">
-    <select id="level" aria-label="最低等級"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select>
-    <button id="download" disabled>下載目前結果 CSV</button>
-  </div>
-  <p id="status">尚未載入檔案</p><p id="error" role="alert"></p>
-  <div class="table-wrap"><table><thead><tr><th>時間</th><th>等級</th><th>Logger</th><th>訊息</th><th>MCAP</th><th>來源</th></tr></thead><tbody id="rows"></tbody></table></div>
-  <p class="hint">需要網路連線載入 MCAP 函式庫；支援未壓縮的 ROS 2 CDR rcl_interfaces/msg/Log。</p>
+  <header class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">/</span><span>ROS 工具台</span></div><span class="masthead-note">MCAP /rosout</span></header>
+  <main>
+    <div class="intro"><div><h1>Log viewer</h1><p>讀取 ROS 2 的 /rosout 紀錄，快速搜尋訊息、定位來源，並匯出篩選結果。</p></div><span class="privacy">檔案只在瀏覽器內處理</span></div>
+    <section class="workspace" aria-label="Log viewer 工作區">
+      <div class="load-panel">
+        <div id="drop" role="button" tabindex="0" aria-label="選擇或拖入 MCAP 檔案"><span class="upload-icon" aria-hidden="true">↥</span><span><span class="drop-title">拖入 MCAP 檔案</span><span class="drop-sub">或點這裡選擇檔案，可一次載入多個</span></span><input id="file" type="file" accept=".mcap" multiple></div>
+        <div class="load-details"><span class="section-label">讀取狀態</span><p id="status" aria-live="polite">尚未載入檔案。請選擇一個或多個 .mcap 檔。</p><p id="error" role="alert"></p></div>
+      </div>
+      <div class="filters">
+        <label class="field search-field" for="search">搜尋紀錄<input id="search" type="search" placeholder="Logger、訊息、來源檔案或 MCAP"></label>
+        <label class="field" for="level">最低等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
+        <button id="download" disabled>下載結果 CSV</button>
+      </div>
+      <div class="results-head"><h2>紀錄列表</h2><span class="results-note">拖曳欄名邊緣調整寬度；最多顯示 5,000 筆</span></div>
+      <div class="table-wrap"><table id="log-table"><colgroup><col><col><col><col><col><col></colgroup><thead><tr><th scope="col">時間</th><th scope="col">等級</th><th scope="col">Logger</th><th scope="col">訊息</th><th scope="col">MCAP</th><th scope="col">來源</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+    <p class="footnote">需要網路連線載入 MCAP 函式庫。支援未壓縮的 ROS 2 CDR rcl_interfaces/msg/Log。</p>
+  </main>
   <script type="module">
     const $ = id => document.getElementById(id);
     const drop = $('drop'), fileInput = $('file');
     let logs = [], loadedFiles = [], loadToken = 0;
     const levels = {10:'DEBUG', 20:'INFO', 30:'WARN', 40:'ERROR', 50:'FATAL'};
     const decoder = new TextDecoder();
+    const table = $('log-table');
+    const columns = [...table.querySelectorAll('col')];
+    const columnWidths = [205, 90, 185, 460, 170, 270];
+    const minColumnWidths = [130, 70, 100, 160, 100, 120];
+    function updateColumnWidths() {
+      columns.forEach((col, index) => { col.style.width = `${columnWidths[index]}px`; });
+      table.style.setProperty('--table-width', `${columnWidths.reduce((sum, width) => sum + width, 0)}px`);
+    }
+    updateColumnWidths();
+    table.querySelectorAll('th').forEach((heading, index) => {
+      const handle = document.createElement('button');
+      handle.type = 'button';
+      handle.className = 'resize-handle';
+      handle.setAttribute('aria-label', `調整${heading.textContent}欄寬`);
+      handle.title = '拖曳調整欄寬；方向鍵每次調整 10px';
+      heading.append(handle);
+      let startX, startWidth;
+      handle.addEventListener('pointerdown', event => {
+        if (event.button !== 0 && event.pointerType === 'mouse') return;
+        startX = event.clientX;
+        startWidth = heading.getBoundingClientRect().width;
+        handle.setPointerCapture(event.pointerId);
+        document.body.classList.add('resizing');
+        event.preventDefault();
+      });
+      handle.addEventListener('pointermove', event => {
+        if (!handle.hasPointerCapture(event.pointerId)) return;
+        columnWidths[index] = Math.max(minColumnWidths[index], Math.round(startWidth + event.clientX - startX));
+        updateColumnWidths();
+      });
+      const stopResize = () => document.body.classList.remove('resizing');
+      handle.addEventListener('pointerup', stopResize);
+      handle.addEventListener('pointercancel', stopResize);
+      handle.addEventListener('lostpointercapture', stopResize);
+      handle.addEventListener('keydown', event => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        columnWidths[index] = Math.max(minColumnWidths[index], columnWidths[index] + (event.key === 'ArrowRight' ? 10 : -10));
+        updateColumnWidths();
+      });
+    });
 
     function decodeLog(bytes) {
       const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -106,7 +187,8 @@
         fragment.append(tr);
       }
       body.append(fragment);
-      $('status').textContent = `${loadedFiles.length ? loadedFiles.join(', ') : '檔案'}：共 ${logs.length.toLocaleString()} 筆 /rosout，篩選後 ${matches.length.toLocaleString()} 筆` + (matches.length > 5000 ? '（表格只顯示前 5,000 筆，可下載全部篩選結果）' : '');
+      const fileSummary = loadedFiles.length === 1 ? loadedFiles[0] : `${loadedFiles.length} 個 MCAP 檔案`;
+      $('status').textContent = `${fileSummary}：共 ${logs.length.toLocaleString()} 筆 /rosout，篩選後 ${matches.length.toLocaleString()} 筆` + (matches.length > 5000 ? '（表格只顯示前 5,000 筆，可下載全部篩選結果）' : '');
       $('download').disabled = matches.length === 0;
     }
 
