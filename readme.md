@@ -8,7 +8,7 @@
 
 ## 快速開始
 
-1. 開啟 [rosout.html](./rosout.html)。
+1. 開啟 [roslog_explorer.html](./roslog_explorer.html)。
 2. 點選載入區選擇一個或多個 `.mcap` 檔，或將檔案、資料夾拖入頁面。
 3. 載入完成後，在紀錄列表查看結果；用搜尋條件、Log 等級或時間分布縮小範圍。
 4. 按「下載結果 CSV」取得符合目前條件的全部紀錄。
@@ -60,4 +60,4 @@
 
 ## 下一步
 
-開啟 [分析器](./rosout.html) 並載入一個含有 `/rosout` 的 MCAP 檔，先用 WARN 以上的等級篩選，再於時間分布中定位異常時段。
+開啟 [分析器](./roslog_explorer.html) 並載入一個含有 `/rosout` 的 MCAP 檔，先用 WARN 以上的等級篩選，再於時間分布中定位異常時段。
