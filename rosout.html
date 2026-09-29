@@ -34,12 +34,21 @@
     .section-label { font-weight: 700; font-size: .88rem; }
     #status, #error { margin: 0; overflow-wrap: anywhere; line-height: 1.55; }
     #status { color: #526b80; } #error { color: #ae3039; white-space: pre-wrap; }
-    .filters { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; padding: 1.1rem 1.3rem; border-bottom: 1px solid #dce6ee; }
+    .filters { display: flex; flex-wrap: wrap; align-items: start; gap: .8rem; padding: 1.1rem 1.3rem; border-bottom: 1px solid #dce6ee; }
     .field { display: grid; gap: .4rem; color: #496176; font-size: .82rem; font-weight: 650; }
     .search-field { flex: 1 1 340px; }
+    .search-tags { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .search-tags:empty { display: none; }
+    .search-tag { display: inline-flex; align-items: center; max-width: 100%; border: 1px solid #9bbbd7; border-radius: .4rem; background: #eaf3fb; color: #235c9e; }
+    .search-tag button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: .3rem .5rem; }
+    .search-tag .tag-text { overflow-wrap: anywhere; text-align: left; }
+    .search-tag .tag-remove { border-left: 1px solid #b9d0e3; font-size: 1.1rem; line-height: 1; }
+    .search-tag.or-tag { background: #edf3ff; border-color: #9aaee0; color: #344f9a; }
+    .search-tag.exclude-tag { background: #fff1ef; border-color: #e0aaa4; color: #963d38; }
+    .search-tag input { width: min(16rem, 60vw); height: 2rem; border: 0; background: white; padding: 0 .4rem; }
     .field input, .field select { height: 2.75rem; border: 1px solid #bdcedc; border-radius: .45rem; background: white; color: #193047; padding: 0 .85rem; min-width: 0; font-size: .93rem; }
     .field input::placeholder { color: #798da0; }
-    #download { height: 2.75rem; border: 1px solid #235c9e; border-radius: .45rem; background: #235c9e; color: white; padding: 0 1rem; font-weight: 650; cursor: pointer; }
+    #download { margin-top: 1.45rem; height: 2.75rem; border: 1px solid #235c9e; border-radius: .45rem; background: #235c9e; color: white; padding: 0 1rem; font-weight: 650; cursor: pointer; }
     #download:hover:not(:disabled) { background: #184979; }
     #download:disabled { background: #e2eaf0; border-color: #e2eaf0; color: #8395a4; cursor: not-allowed; }
     .timeline-panel { border-bottom: 1px solid #dce6ee; }
@@ -100,7 +109,7 @@
     td.level { font-size: .76rem; font-weight: 700; }
     .DEBUG { color: #667e91; } .INFO { color: #286497; } .WARN { color: #9c600b; } .ERROR, .FATAL { color: #b33139; }
     .footnote { margin: 1rem .2rem 0; color: #637c90; font-size: .8rem; line-height: 1.5; }
-    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, #download { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
+    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, #download { flex: 1 1 100%; } #download { margin-top: 0; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -114,8 +123,8 @@
         <div class="load-details"><span class="section-label">讀取狀態</span><p id="status" aria-live="polite">尚未載入檔案。請選擇一個或多個 .mcap 檔。</p><p id="error" role="alert"></p></div>
       </div>
       <div class="filters">
-        <label class="field search-field" for="search">搜尋紀錄<input id="search" type="search" placeholder="Logger、訊息、來源檔案或 MCAP"></label>
-        <label class="field" for="level">最低等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
+        <div class="field search-field"><label for="search">搜尋條件（Enter 新增；一般 AND、+ 擴充 OR、- 排除）</label><input id="search" type="search" placeholder="Logger、訊息、來源檔案或 MCAP；按 Enter 新增"><div id="search-tags" class="search-tags" aria-label="搜尋條件"></div></div>
+        <label class="field" for="level">Log 等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
         <button id="download" disabled>下載結果 CSV</button>
       </div>
       <details id="timeline-section" class="timeline-panel">
@@ -217,6 +226,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     const $ = id => document.getElementById(id);
     const drop = $('drop'), fileInput = $('file'), folderInput = $('folder');
     let logs = [], loadedFiles = [], loadToken = 0;
+    const searchTerms = [];
     const levels = {10:'DEBUG', 20:'INFO', 30:'WARN', 40:'ERROR', 50:'FATAL'};
     const decoder = new TextDecoder();
     const table = $('log-table'), tableWrap = $('table-wrap');
@@ -471,7 +481,49 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     });
     window.addEventListener('resize', drawTimeline);
     updateTimeControls();
-    function filtered() { const q = $('search').value.trim().toLocaleLowerCase(), min = Number($('level').value), [start, end] = timeBounds(); return logs.filter(x => x.time >= start && x.time <= end && x.level >= min && (!q || [x.name,x.msg,x.file,x.func,x.bag].some(v => v.toLocaleLowerCase().includes(q)))); }
+    function matchesSearchTerms(log, terms) {
+      const fields = [log.name, log.msg, log.file, log.func, log.bag]
+        .map(value => String(value ?? '').toLocaleLowerCase());
+      const includes = term => fields.some(value => value.includes(term.toLocaleLowerCase()));
+      const required = terms.filter(term => !term.startsWith('+') && !term.startsWith('-'));
+      const alternatives = terms.filter(term => term.startsWith('+')).map(term => term.slice(1));
+      const excluded = terms.filter(term => term.startsWith('-')).map(term => term.slice(1));
+      const positiveMatch = required.length || alternatives.length
+        ? (required.length > 0 && required.every(includes)) || alternatives.some(includes)
+        : true;
+      return positiveMatch && excluded.every(term => !includes(term));
+    }
+    function filtered() {
+      const min = Number($('level').value), [start, end] = timeBounds();
+      return logs.filter(x => x.time >= start && x.time <= end && x.level >= min && matchesSearchTerms(x, searchTerms));
+    }
+    function renderSearchTags() {
+      const container = $('search-tags');
+      container.replaceChildren();
+      searchTerms.forEach((term, index) => {
+        const tag = document.createElement('span'); tag.className = 'search-tag' + (term.startsWith('+') ? ' or-tag' : term.startsWith('-') ? ' exclude-tag' : '');
+        const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'tag-text';
+        edit.textContent = term; edit.setAttribute('aria-label', `編輯搜尋條件：${term}`);
+        edit.addEventListener('click', () => {
+          const input = document.createElement('input'); input.type = 'text'; input.value = term;
+          input.setAttribute('aria-label', `編輯搜尋條件：${term}`);
+          edit.replaceWith(input); input.focus(); input.select();
+          input.addEventListener('keydown', event => {
+            if (event.key === 'Escape') { input.replaceWith(edit); edit.focus(); }
+            if (event.key === 'Enter' && !event.isComposing) {
+              event.preventDefault(); const value = input.value.trim();
+              if (value && value !== '+' && value !== '-') searchTerms[index] = value; else searchTerms.splice(index, 1);
+              renderSearchTags(); render();
+            }
+          });
+          input.addEventListener('blur', () => { if (input.isConnected) input.replaceWith(edit); });
+        });
+        const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'tag-remove';
+        remove.textContent = '×'; remove.setAttribute('aria-label', `移除搜尋條件：${term}`);
+        remove.addEventListener('click', () => { searchTerms.splice(index, 1); renderSearchTags(); render(); });
+        tag.append(edit, remove); container.append(tag);
+      });
+    }
     function render() {
       const matches = filtered(), body = $('rows'); body.replaceChildren();
       const fragment = document.createDocumentFragment();
@@ -622,7 +674,15 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       try { await load(files); }
       catch (error) { $('status').textContent = '無法載入檔案'; $('error').textContent = error.message || String(error); }
     });
-    $('search').addEventListener('input', render); $('level').addEventListener('change', render);
+    $('search').addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || event.isComposing) return;
+      event.preventDefault();
+      const term = $('search').value.trim();
+      if (!term || term === '+' || term === '-') return;
+      searchTerms.push(term); $('search').value = '';
+      renderSearchTags(); render();
+    });
+    $('level').addEventListener('change', render);
     $('download').addEventListener('click', () => {
       const cells = [['time','level','name','message','mcap','file','function','line'], ...filtered().map(x => [displayTime(x.time),levels[x.level] || x.level,x.name,x.msg,x.bag,x.file,x.func,x.line])];
       const csv = '\ufeff' + cells.map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\r\n');
