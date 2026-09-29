@@ -39,6 +39,29 @@
     #download { height: 2.75rem; border: 1px solid #235c9e; border-radius: .45rem; background: #235c9e; color: white; padding: 0 1rem; font-weight: 650; cursor: pointer; }
     #download:hover:not(:disabled) { background: #184979; }
     #download:disabled { background: #e2eaf0; border-color: #e2eaf0; color: #8395a4; cursor: not-allowed; }
+    .timeline-panel { padding: 1.4rem 1.3rem 1.3rem; border-bottom: 1px solid #dce6ee; }
+    .timeline-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: .9rem; }
+    .timeline-heading h2 { margin: 0; font-size: 1.08rem; letter-spacing: -.025em; }
+    .timeline-legend { display: flex; flex-wrap: wrap; gap: .45rem 1.1rem; color: #536c80; font-size: .8rem; }
+    .timeline-legend span::before { content: ""; display: inline-block; width: .55rem; height: .55rem; margin-right: .4rem; border-radius: 2px; background: var(--swatch); vertical-align: 1px; }
+    .timeline-frame { padding: .65rem .8rem .35rem; border: 1px solid #d5e2ed; border-radius: .55rem; background: #f5f9fc; }
+    #timeline { display: block; width: 100%; height: 152px; cursor: crosshair; touch-action: none; }
+    #timeline:focus-visible { outline: 3px solid #2d6dc0; }
+    .timeline-axis { display: flex; justify-content: space-between; gap: 1rem; padding-top: .35rem; color: #60798e; font: .75rem/1.4 "IBM Plex Mono", monospace; white-space: pre-line; }
+    .timeline-axis span:nth-child(2) { text-align: center; }
+    .timeline-axis span:last-child { text-align: right; }
+    .advanced-time { margin-top: .8rem; }
+    .advanced-time summary { display: inline-flex; align-items: center; gap: .55rem; color: #235c9e; font-size: .87rem; font-weight: 650; cursor: pointer; list-style: none; }
+    .advanced-time summary::-webkit-details-marker { display: none; }
+    .advanced-time summary::before { content: "›"; display: inline-block; font-size: 1.25rem; line-height: .7; transition: transform .15s; }
+    .advanced-time[open] summary::before { transform: rotate(90deg); }
+    .time-selection-note { color: #60798e; font-size: .78rem; font-weight: 400; }
+    .time-selection-note:empty { display: none; }
+    .time-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; padding-top: .95rem; }
+    .time-controls .field { flex: 1 1 220px; }
+    #reset-time { height: 2.75rem; padding: 0 .9rem; border: 1px solid #bdcedc; border-radius: .45rem; background: white; color: #235c9e; cursor: pointer; }
+    #reset-time:disabled { color: #9aaab7; cursor: not-allowed; }
+    .timeline-help { margin: .65rem 0 0; color: #637c90; font-size: .8rem; }
     .results-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 1rem 1.3rem .8rem; }
     h2 { margin: 0; font-size: 1rem; } .results-note { color: #71869a; font-size: .8rem; }
     .table-wrap { overflow: auto; max-height: 68vh; min-height: 16rem; }
@@ -74,6 +97,15 @@
         <label class="field" for="level">最低等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
         <button id="download" disabled>下載結果 CSV</button>
       </div>
+      <section class="timeline-panel" aria-label="時間篩選">
+        <div class="timeline-heading"><h2>時間分布</h2><div class="timeline-legend"><span style="--swatch:#9aafc1">訊息量</span><span style="--swatch:#d89634">WARN 發生位置</span><span style="--swatch:#c3444b">ERROR / FATAL 發生位置</span></div></div>
+        <div class="timeline-frame"><canvas id="timeline" height="152" role="img" aria-label="依時間排列的紀錄數量與嚴重程度分布"></canvas>
+        <div class="timeline-axis"><span id="time-min">—</span><span id="time-mid">—</span><span id="time-max">—</span></div></div>
+        <p class="timeline-help">在時間條上拖曳選取範圍。上方兩條軌道標示 WARN 與 ERROR／FATAL，柱高表示該時段的訊息量。</p>
+        <details class="advanced-time"><summary>進階時間設定 <span id="time-selection-note" class="time-selection-note"></span></summary>
+          <div class="time-controls"><label class="field" for="time-start">開始時間<input id="time-start" type="datetime-local" step="0.001"></label><label class="field" for="time-end">結束時間<input id="time-end" type="datetime-local" step="0.001"></label><button id="reset-time" type="button" disabled>清除時間範圍</button></div>
+        </details>
+      </section>
       <div class="results-head"><h2>紀錄列表</h2><span class="results-note">拖曳欄名邊緣調整寬度；最多顯示 5,000 筆</span></div>
       <div class="table-wrap"><table id="log-table"><colgroup><col><col><col><col><col><col></colgroup><thead><tr><th scope="col">時間</th><th scope="col">等級</th><th scope="col">Logger</th><th scope="col">訊息</th><th scope="col">MCAP</th><th scope="col">來源</th></tr></thead><tbody id="rows"></tbody></table></div>
     </section>
@@ -144,6 +176,12 @@
     }
 
     function displayTime(ms) { const d = new Date(ms); return Number.isNaN(d.getTime()) ? String(ms) : d.toLocaleString('zh-TW', {hour12:false}) + '.' + String(Math.floor(ms % 1000)).padStart(3,'0'); }
+    function displayTimelineTime(ms) {
+      const d = new Date(ms);
+      if (Number.isNaN(d.getTime())) return String(ms);
+      const two = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}/${two(d.getMonth() + 1)}/${two(d.getDate())}\n${two(d.getHours())}:${two(d.getMinutes())}`;
+    }
     const ansiColors = {30:'#26313d',31:'#b42318',32:'#16803c',33:'#9a6700',34:'#175cd3',35:'#9e3ab1',36:'#087f8c',37:'#52606d',90:'#667085',91:'#d92d20',92:'#039855',93:'#dc6803',94:'#2e90fa',95:'#c11574',96:'#06aed4',97:'#1d2939'};
     function appendAnsiText(target, text) {
       let offset = 0, color = '', bold = false;
@@ -170,7 +208,122 @@
       }
       append(text.slice(offset).replace(/\x1b[\][^\x07]*(?:\x07|\x1b\\\\)/g, ''));
     }
-    function filtered() { const q = $('search').value.trim().toLocaleLowerCase(), min = Number($('level').value); return logs.filter(x => x.level >= min && (!q || [x.name,x.msg,x.file,x.func,x.bag].some(v => v.toLocaleLowerCase().includes(q)))); }
+    const timeline = $('timeline');
+    let timeExtent = null, dragStart = null, dragCurrent = null;
+    function localInputTime(ms) {
+      const date = new Date(ms - new Date(ms).getTimezoneOffset() * 60000);
+      return date.toISOString().slice(0, 23);
+    }
+    function timeBounds() {
+      const start = $('time-start').value ? new Date($('time-start').value).getTime() : -Infinity;
+      const end = $('time-end').value ? new Date($('time-end').value).getTime() : Infinity;
+      return [start, end];
+    }
+    function drawTimeline() {
+      const width = Math.max(1, Math.round(timeline.clientWidth));
+      const height = 152, ratio = window.devicePixelRatio || 1;
+      timeline.width = Math.round(width * ratio);
+      timeline.height = Math.round(height * ratio);
+      const ctx = timeline.getContext('2d');
+      ctx.scale(ratio, ratio);
+      ctx.clearRect(0, 0, width, height);
+      const plotTop = 67, plotBottom = 145;
+      ctx.strokeStyle = '#dbe6ef'; ctx.lineWidth = 1;
+      for (const y of [plotTop, plotTop + 39, plotBottom]) {
+        ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(width, y + .5); ctx.stroke();
+      }
+      if (!timeExtent) {
+        ctx.fillStyle = '#748da2'; ctx.font = '13px system-ui';
+        ctx.textAlign = 'center'; ctx.fillText('載入 MCAP 後顯示時間分布', width / 2, 100);
+        return;
+      }
+      const bins = Array.from({length: Math.min(160, Math.max(24, Math.floor(width / 6)))}, () => [0, 0, 0]);
+      const [min, max] = timeExtent, span = Math.max(1, max - min);
+      for (const log of logs) {
+        const i = Math.min(bins.length - 1, Math.max(0, Math.floor((log.time - min) / span * bins.length)));
+        bins[i][log.level >= 40 ? 2 : log.level >= 30 ? 1 : 0]++;
+      }
+      const peak = Math.max(1, ...bins.map(bin => bin.reduce((a, b) => a + b, 0)));
+      const step = width / bins.length;
+      bins.forEach((bin, i) => {
+        const x = i * step, barWidth = Math.max(1, step - 1);
+        const count = bin[0] + bin[1] + bin[2];
+        if (count) {
+          const barHeight = Math.max(2, count / peak * (plotBottom - plotTop - 3));
+          ctx.fillStyle = '#9aafc1';
+          ctx.fillRect(x, plotBottom - barHeight, barWidth, barHeight);
+        }
+        if (bin[1]) {
+          ctx.fillStyle = '#d89634';
+          ctx.fillRect(x, 11, Math.max(2, step - .5), 13);
+        }
+        if (bin[2]) {
+          ctx.fillStyle = '#c3444b';
+          ctx.fillRect(x, 36, Math.max(2, step - .5), 13);
+        }
+      });
+      const [start, end] = dragStart !== null && dragCurrent !== null
+        ? [Math.min(dragStart, dragCurrent), Math.max(dragStart, dragCurrent)] : timeBounds();
+      if (Number.isFinite(start) || Number.isFinite(end)) {
+        const left = Number.isFinite(start) ? Math.max(0, Math.min(width, (start - min) / span * width)) : 0;
+        const right = Number.isFinite(end) ? Math.max(0, Math.min(width, (end - min) / span * width)) : width;
+        ctx.fillStyle = '#e8f0f8b8';
+        ctx.fillRect(0, 0, left, height);
+        ctx.fillRect(right, 0, width - right, height);
+        ctx.fillStyle = '#235c9e12'; ctx.fillRect(left, 0, Math.max(0, right - left), height);
+        ctx.strokeStyle = '#235c9e'; ctx.lineWidth = 2;
+        for (const x of [left, right]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+      }
+    }
+    function updateTimeControls() {
+      timeExtent = logs.length ? [logs[0].time, logs[logs.length - 1].time] : null;
+      $('time-min').textContent = timeExtent ? displayTimelineTime(timeExtent[0]) : '—';
+      $('time-max').textContent = timeExtent ? displayTimelineTime(timeExtent[1]) : '—';
+      $('time-mid').textContent = timeExtent ? displayTimelineTime((timeExtent[0] + timeExtent[1]) / 2) : '—';
+      timeline.setAttribute('aria-label', timeExtent ? `時間分布，${logs.length} 筆紀錄，其中 ${logs.filter(log => log.level === 30).length} 筆 WARN、${logs.filter(log => log.level >= 40).length} 筆 ERROR 或 FATAL。可用下方時間欄位篩選。` : '載入 MCAP 後顯示時間分布');
+      for (const id of ['time-start', 'time-end']) $(id).disabled = !timeExtent;
+      drawTimeline();
+    }
+    function applyTimeRange() {
+      const active = Boolean($('time-start').value || $('time-end').value);
+      $('reset-time').disabled = !active;
+      $('time-selection-note').textContent = active ? '（已設定範圍）' : '';
+      drawTimeline(); render();
+    }
+    function timelineTime(event) {
+      const rect = timeline.getBoundingClientRect();
+      const position = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      return timeExtent[0] + position * (timeExtent[1] - timeExtent[0]);
+    }
+    timeline.addEventListener('pointerdown', event => {
+      if (!timeExtent) return;
+      dragStart = timelineTime(event);
+      dragCurrent = dragStart;
+      timeline.setPointerCapture(event.pointerId);
+    });
+    timeline.addEventListener('pointermove', event => {
+      if (dragStart === null) return;
+      dragCurrent = timelineTime(event); drawTimeline();
+    });
+    timeline.addEventListener('pointerup', event => {
+      if (dragStart === null) return;
+      const end = timelineTime(event);
+      if (Math.abs(end - dragStart) > Math.max(1, (timeExtent[1] - timeExtent[0]) * .003)) {
+        $('time-start').value = localInputTime(Math.min(dragStart, end));
+        $('time-end').value = localInputTime(Math.max(dragStart, end));
+        applyTimeRange();
+      }
+      dragStart = dragCurrent = null; drawTimeline();
+    });
+    timeline.addEventListener('pointercancel', () => { dragStart = dragCurrent = null; drawTimeline(); });
+    for (const id of ['time-start', 'time-end']) $(id).addEventListener('change', applyTimeRange);
+    $('reset-time').addEventListener('click', () => {
+      $('time-start').value = $('time-end').value = '';
+      applyTimeRange();
+    });
+    window.addEventListener('resize', drawTimeline);
+    updateTimeControls();
+    function filtered() { const q = $('search').value.trim().toLocaleLowerCase(), min = Number($('level').value), [start, end] = timeBounds(); return logs.filter(x => x.time >= start && x.time <= end && x.level >= min && (!q || [x.name,x.msg,x.file,x.func,x.bag].some(v => v.toLocaleLowerCase().includes(q)))); }
     function render() {
       const matches = filtered(), body = $('rows'); body.replaceChildren();
       const fragment = document.createDocumentFragment();
@@ -196,6 +349,7 @@
       const selected = [...files].filter(file => file);
       if (!selected.length) return;
       const token = ++loadToken; logs = []; loadedFiles = selected.map(file => file.name);
+      $('time-start').value = $('time-end').value = ''; updateTimeControls(); $('reset-time').disabled = true; $('time-selection-note').textContent = '';
       $('rows').replaceChildren(); $('error').textContent = ''; $('download').disabled = true;
       $('status').textContent = `正在讀取 ${selected.length} 個檔案…`;
       try {
@@ -225,6 +379,7 @@
         }
         if (token !== loadToken) return;
         logs.sort((a, b) => a.time - b.time);
+        updateTimeControls();
         $('error').textContent = failures.join('\n');
         render();
       } catch (error) {
