@@ -1,5 +1,7 @@
 # ROS Log Explorer
 
+[線上開啟 ROS Log Explorer](https://howardwhile.github.io/roslog_explorer/)
+
 在瀏覽器中分析 ROS 2 MCAP 檔案的 `/rosout` 紀錄。拖入檔案後，即可依訊息內容、Logger、等級與時間範圍找出需要追查的事件，再將篩選結果匯出為 CSV。
 
 **不需要安裝套件或上傳檔案。** 檔案由瀏覽器在本機讀取與處理。
