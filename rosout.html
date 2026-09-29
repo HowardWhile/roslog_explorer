@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MCAP /rosout 檢視器</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('rosout-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    } catch { document.documentElement.dataset.theme = 'light'; }
+  </script>
   <style>
     :root { font-family: "IBM Plex Sans", "Noto Sans TC", system-ui, sans-serif; color: #193047; background: #eaf0f5; }
     * { box-sizing: border-box; }
@@ -13,7 +18,16 @@
     .masthead { background: #173b61; color: white; padding: 1rem clamp(1rem, 3vw, 3rem); display: flex; justify-content: space-between; align-items: center; }
     .brand { display: flex; align-items: center; gap: .8rem; font-weight: 700; letter-spacing: -.02em; }
     .brand-mark { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 1px solid #91b5d8; border-radius: .45rem; color: #a8d9ff; font: 700 1.2rem monospace; }
-    .masthead-note { color: #bdd3e7; font-size: .85rem; }
+    .header-actions { display: flex; align-items: center; gap: .55rem; }
+    .language-toggle { min-height: 2.5rem; padding: .35rem .7rem; border: 1px solid #91b5d8; border-radius: .5rem; background: transparent; color: white; cursor: pointer; font-size: .85rem; font-weight: 650; }
+    .language-toggle:hover { background: #ffffff1a; }
+    .theme-toggle { display: inline-flex; align-items: center; gap: .55rem; min-height: 2.5rem; padding: .35rem .7rem; border: 1px solid #91b5d8; border-radius: .5rem; background: transparent; color: white; cursor: pointer; font-size: .85rem; font-weight: 650; }
+    .theme-toggle:hover { background: #ffffff1a; }
+    @media (max-width: 500px) { .masthead { flex-wrap: wrap; gap: .7rem; } .header-actions { width: 100%; justify-content: flex-end; } }
+    .theme-icon { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .theme-sun { display: none; }
+    [data-theme="dark"] .theme-sun { display: block; }
+    [data-theme="dark"] .theme-moon { display: none; }
     main { max-width: 1600px; padding: clamp(1.2rem, 3vw, 3rem); margin: auto; }
     .intro { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 1.8rem; }
     h1 { font-size: clamp(2.1rem, 4vw, 3.5rem); line-height: 1.1; letter-spacing: -.055em; margin: 0 0 .5rem; }
@@ -117,13 +131,49 @@
     td.message { white-space: pre-wrap; line-height: 1.5; }
     td.level { font-size: .76rem; font-weight: 700; }
     .DEBUG { color: #667e91; } .INFO { color: #286497; } .WARN { color: #9c600b; } .ERROR, .FATAL { color: #b33139; }
-    .footnote { margin: 1rem .2rem 0; color: #637c90; font-size: .8rem; line-height: 1.5; }
-    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, .search-controls .field { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
+    [data-theme="dark"] { color-scheme: dark; color: #e1eaf3; background: #101d2b; }
+    [data-theme="dark"] .masthead { background: #142d47; }
+    [data-theme="dark"] .brand-mark { border-color: #7099bf; }
+    [data-theme="dark"] .intro p, [data-theme="dark"] .drop-sub, [data-theme="dark"] .search-help, [data-theme="dark"] .timeline-help, [data-theme="dark"] .time-selection-note, [data-theme="dark"] .results-note { color: #a9bacb; }
+    [data-theme="dark"] .privacy { background: #203d58; color: #c3dced; }
+    [data-theme="dark"] .workspace { background: #17283a; border-color: #36516a; box-shadow: 0 12px 36px #050e1880; }
+    [data-theme="dark"] .load-panel, [data-theme="dark"] .filters, [data-theme="dark"] .timeline-panel { border-color: #31495f; }
+    [data-theme="dark"] #drop { background: #1c354d; border-color: #6585a2; }
+    [data-theme="dark"] #drop:hover, [data-theme="dark"] #drop.over, [data-theme="dark"] .timeline-heading:hover, [data-theme="dark"] tbody tr:hover { background: #25445e; }
+    [data-theme="dark"] .upload-icon { background: #2c5273; color: #bbdfff; }
+    [data-theme="dark"] #status, [data-theme="dark"] .field, [data-theme="dark"] .timeline-heading span, [data-theme="dark"] .track-labels, [data-theme="dark"] .timeline-axis, [data-theme="dark"] #selection-summary, [data-theme="dark"] td:first-child { color: #adc0d1; }
+    [data-theme="dark"] #error, [data-theme="dark"] .ERROR, [data-theme="dark"] .FATAL { color: #ff858e; }
+    [data-theme="dark"] .logger-suggestions { background: #1e3449; border-color: #54718b; box-shadow: 0 8px 24px #07111fcc; }
+    [data-theme="dark"] .logger-suggestions button { background: #1e3449; color: #e1eaf3; }
+    [data-theme="dark"] .logger-suggestions button:hover, [data-theme="dark"] .logger-suggestions button.active { background: #2c4a64; }
+    [data-theme="dark"] .search-tag { background: #2c4052; border-color: #71899d; color: #e0eaf2; }
+    [data-theme="dark"] .search-tag.or-tag { background: #1d493d; border-color: #56ad81; color: #b6f0ce; }
+    [data-theme="dark"] .search-tag.exclude-tag { background: #513236; border-color: #d27e83; color: #ffd0d0; }
+    [data-theme="dark"] .field input, [data-theme="dark"] .field select, [data-theme="dark"] .search-input input, [data-theme="dark"] .search-tag input { background: #122335; border-color: #54718b; color: #e1eaf3; }
+    [data-theme="dark"] .field input::placeholder, [data-theme="dark"] .search-input input::placeholder { color: #9fb4c6; }
+    [data-theme="dark"] #download { background: #4586ca; border-color: #4586ca; color: #091a2c; }
+    [data-theme="dark"] #download:hover:not(:disabled) { background: #70ade6; }
+    [data-theme="dark"] #download:disabled { background: #293d4f; border-color: #293d4f; color: #97a9b8; }
+    [data-theme="dark"] .timeline-frame { background: #1b3044; border-color: #3e5971; }
+    [data-theme="dark"] .timeline-tooltip { background: #d5e8f7; color: #102438; }
+    [data-theme="dark"] .timeline-heading span::after, [data-theme="dark"] .selection-bar.has-selection #selection-summary, [data-theme="dark"] #reset-time, [data-theme="dark"] .advanced-time summary { color: #8fc3f5; }
+    [data-theme="dark"] .table-horizontal-scroll { background: #20374b; border-color: #3e5971; }
+    [data-theme="dark"] th, [data-theme="dark"] td { border-color: #30485e; }
+    [data-theme="dark"] th { background: #233b51; color: #c0d0dd; }
+    [data-theme="dark"] .resize-handle::after { background: #8199ab; }
+    [data-theme="dark"] .DEBUG { color: #b2c1ce; } [data-theme="dark"] .INFO { color: #9fceff; } [data-theme="dark"] .WARN { color: #f1bb67; }
+    [data-theme="dark"] :focus-visible { outline-color: #9bcfff; }
+    [data-theme="dark"] .timeline-heading:focus-visible, [data-theme="dark"] #timeline:focus-visible { outline-color: #9bcfff; }
+    :root { --ansi-30: #26313d; --ansi-31: #b42318; --ansi-32: #16803c; --ansi-33: #9a6700; --ansi-34: #175cd3; --ansi-35: #9e3ab1; --ansi-36: #087f8c; --ansi-37: #52606d; --ansi-90: #667085; --ansi-91: #d92d20; --ansi-92: #039855; --ansi-93: #dc6803; --ansi-94: #2e90fa; --ansi-95: #c11574; --ansi-96: #06aed4; --ansi-97: #1d2939; }
+    [data-theme="dark"] { --ansi-30: #c0ccd7; --ansi-31: #ff858e; --ansi-32: #78d6a3; --ansi-33: #f1bb67; --ansi-34: #9fceff; --ansi-35: #dda4f0; --ansi-36: #7ed1d9; --ansi-37: #adbfce; --ansi-90: #afc0cf; --ansi-91: #ff858e; --ansi-92: #78d6a3; --ansi-93: #f1bb67; --ansi-94: #9fceff; --ansi-95: #ef9dcc; --ansi-96: #7ed1d9; --ansi-97: #e1eaf3; }
+    :root { --timeline-grid: #dbe6ef; --timeline-empty: #748da2; --timeline-volume: #9aafc1; --timeline-warn: #d89634; --timeline-error: #c3444b; --timeline-mask: #e8f0f8b8; --timeline-selection: #235c9e12; --timeline-edge: #235c9e; }
+    [data-theme="dark"] { --timeline-grid: #3e5971; --timeline-empty: #b5c8d8; --timeline-volume: #829fb9; --timeline-warn: #f1bb67; --timeline-error: #fa818b; --timeline-mask: #102236a8; --timeline-selection: #75baff24; --timeline-edge: #8fc3f5; }
+    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, .search-controls .field { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
   </style>
 </head>
 <body>
-  <header class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">/</span><span>ROS 工具台</span></div><span class="masthead-note">MCAP /rosout</span></header>
+  <header class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">/</span><span>ROS 工作台</span></div><div class="header-actions"><button id="language-toggle" class="language-toggle" type="button" aria-label="Switch to English" lang="en">English</button><button id="theme-toggle" class="theme-toggle" type="button" aria-label="切換深色模式"><svg class="theme-icon theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.4A8.5 8.5 0 0 1 9.6 3.5 8.5 8.5 0 1 0 20.5 14.4Z"/></svg><svg class="theme-icon theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span id="theme-label">深色模式</span></button></div></header>
   <main>
     <div class="intro"><div><h1>Log viewer</h1><p>讀取 ROS 2 的 /rosout 紀錄，快速搜尋訊息、定位來源，並匯出篩選結果。</p></div><span class="privacy">檔案只在瀏覽器內處理</span></div>
     <section class="workspace" aria-label="Log viewer 工作區">
@@ -160,7 +210,6 @@
       <div id="table-wrap" class="table-wrap"><table id="log-table"><colgroup><col><col><col><col><col><col></colgroup><thead><tr><th scope="col">時間</th><th scope="col">等級</th><th scope="col">Logger</th><th scope="col">訊息</th><th scope="col">MCAP</th><th scope="col">來源</th></tr></thead><tbody id="rows"></tbody></table></div>
       <div id="table-horizontal-scroll" class="table-horizontal-scroll" role="scrollbar" aria-label="紀錄列表水平捲動" aria-orientation="horizontal" aria-controls="table-wrap" aria-valuemin="0" tabindex="0" hidden><div id="table-horizontal-spacer" class="table-horizontal-spacer"></div></div>
     </section>
-    <p class="footnote">可離線使用；MCAP 函式庫已包含在本頁。支援未壓縮的 ROS 2 CDR rcl_interfaces/msg/Log。</p>
   </main>
   <!-- Bundled third-party notices
 
@@ -240,6 +289,137 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
   </script>
   <script type="module">
     const $ = id => document.getElementById(id);
+    const messages = {
+      title: ['MCAP /rosout 檢視器', 'MCAP /rosout viewer'],
+      brand: ['ROS 工作台', 'ROS Workbench'],
+      intro: ['讀取 ROS 2 的 /rosout 紀錄，快速搜尋訊息、定位來源，並匯出篩選結果。', 'Read ROS 2 /rosout logs, search messages, locate their source, and export filtered results.'],
+      privacy: ['檔案只在瀏覽器內處理', 'Files stay in your browser'],
+      workspace: ['Log viewer 工作區', 'Log viewer workspace'],
+      dropAria: ['選擇 MCAP 檔案，或拖入 MCAP 檔案及資料夾', 'Choose MCAP files, or drop MCAP files and folders'],
+      dropTitle: ['拖入 MCAP 檔案或資料夾', 'Drop MCAP files or folders'],
+      dropSub: ['點這裡選擇檔案，也可一次拖入多個檔案或資料夾', 'Click to choose files, or drop multiple files or folders'],
+      loadStatus: ['讀取狀態', 'Load status'],
+      initialStatus: ['尚未載入檔案。請選擇一個或多個 .mcap 檔。', 'No files loaded. Choose one or more .mcap files.'],
+      searchTerms: ['搜尋條件', 'Search filters'],
+      searchPlaceholder: ['輸入關鍵字，按 Enter 新增標籤', 'Enter a keyword, then press Enter to add a tag'],
+      loggerSuggestions: ['Logger 名稱建議', 'Logger name suggestions'],
+      logLevel: ['Log 等級', 'Log level'],
+      allLevels: ['所有等級', 'All levels'],
+      above: ['{level} 以上', '{level} and above'],
+      searchHelp: ['一般標籤要全部符合；加上 + 也會顯示符合該標籤的紀錄；加上 - 則排除。例：robot_driver、+taskmgr 會顯示兩者的紀錄。', 'All regular tags must match. A + tag also includes its matches; a - tag excludes them. Example: robot_driver and +taskmgr shows logs matching either tag.'],
+      timeDistribution: ['時間分布', 'Time distribution'],
+      beforeLoad: ['載入檔案後顯示', 'Shown after loading files'],
+      collapse: ['點此收合', 'Click to collapse'],
+      expand: ['點此展開', 'Click to expand'],
+      messageCount: ['訊息量', 'Messages'],
+      timelineAria: ['依時間排列的紀錄數量與嚴重程度分布', 'Log count and severity over time'],
+      allTime: ['顯示全部時間', 'Showing all time'],
+      clearTime: ['清除時間範圍', 'Clear time range'],
+      timelineHelp: ['滑過時間軌查看各時段的筆數。需要精確設定時，展開下方選項。', 'Hover over the timeline to see counts. Expand the options below to set an exact range.'],
+      advancedTime: ['進階時間設定', 'Advanced time settings'],
+      startTime: ['開始時間', 'Start time'],
+      endTime: ['結束時間', 'End time'],
+      results: ['紀錄列表', 'Log entries'],
+      resultsNote: ['拖曳欄名邊緣調整寬度；最多顯示 5,000 筆', 'Drag column edges to resize; up to 5,000 rows shown'],
+      download: ['下載結果 CSV', 'Download results CSV'],
+      time: ['時間', 'Time'], level: ['等級', 'Level'], message: ['訊息', 'Message'], source: ['來源', 'Source'],
+      horizontalScroll: ['紀錄列表水平捲動', 'Scroll log entries horizontally'],
+      darkMode: ['深色模式', 'Dark mode'], lightMode: ['淺色模式', 'Light mode'],
+      switchDark: ['切換深色模式', 'Switch to dark mode'], switchLight: ['切換淺色模式', 'Switch to light mode'],
+      resize: ['調整{heading}欄寬', 'Resize {heading} column'],
+      resizeHelp: ['拖曳調整欄寬；方向鍵每次調整 10px', 'Drag to resize; arrow keys adjust by 10px'],
+      unsupportedCdr: ['不支援的 CDR 編碼', 'Unsupported CDR encoding'],
+      incompleteCdr: ['CDR 資料不完整', 'Incomplete CDR data'],
+      invalidCdrString: ['CDR 字串長度錯誤', 'Invalid CDR string length'],
+      emptyTimeline: ['載入 MCAP 後顯示時間分布', 'Load MCAP files to see the time distribution'],
+      timelineSummary: ['時間分布，{total} 筆紀錄，其中 {warn} 筆 WARN、{error} 筆 ERROR 或 FATAL。可用下方時間欄位篩選。', 'Time distribution: {total} logs, including {warn} WARN and {error} ERROR or FATAL. Use the time fields below to filter.'],
+      rangeSet: ['（已設定範圍）', '(range set)'], earliest: ['最早', 'earliest'], latest: ['最晚', 'latest'],
+      entries: ['{count} 筆', '{count} entries'], tagCount: ['（{count} 個標籤）', '({count} tags)'],
+      editFilter: ['編輯搜尋條件：{term}', 'Edit search filter: {term}'],
+      removeFilter: ['移除搜尋條件：{term}', 'Remove search filter: {term}'],
+      fileCount: ['{count} 個 MCAP 檔案', '{count} MCAP files'],
+      resultStatus: ['{files}：共 {total} 筆 /rosout，篩選後 {filtered} 筆', '{files}: {total} /rosout logs, {filtered} after filtering'],
+      resultLimit: ['（表格只顯示前 5,000 筆，可下載全部篩選結果）', ' (showing the first 5,000 rows; download all filtered results)'],
+      noFiles: ['未找到 MCAP 檔案', 'No MCAP files found'],
+      noFilesHelp: ['找不到 .mcap 檔案。請拖入含有 MCAP 的資料夾，或直接選擇檔案。', 'No .mcap files found. Drop a folder containing MCAP files or choose files directly.'],
+      readingFiles: ['正在讀取 {count} 個檔案…', 'Reading {count} files…'],
+      readingFile: ['正在讀取 {name}（{index}/{total}）…', 'Reading {name} ({index}/{total})…'],
+      noRosout: ['沒有 /rosout topic', 'No /rosout topic'],
+      unknownSchema: ['未知 schema', 'unknown schema'],
+      unsupportedSchema: ['不支援 {encoding} / {schema}', 'Unsupported {encoding} / {schema}'],
+      readingCount: ['正在讀取 {name}：{count} 筆…', 'Reading {name}: {count} logs…'],
+      loadFailed: ['讀取失敗', 'Could not read files'],
+      folderError: ['瀏覽器無法讀取拖入的資料夾：{error}。請確認瀏覽器支援資料夾拖放，或改為拖入 MCAP 檔案。', 'The browser could not read the dropped folder: {error}. Check folder drop support, or drop MCAP files directly.'],
+      scanning: ['正在搜尋資料夾中的 MCAP 檔案…', 'Searching folder for MCAP files…'],
+      folderFailed: ['無法讀取資料夾', 'Could not read folder'],
+      fileFailed: ['無法載入檔案', 'Could not load files']
+    };
+    let language = 'zh';
+    try { language = localStorage.getItem('rosout-language') === 'en' ? 'en' : 'zh'; } catch {}
+    function tr(key, values = {}) {
+      const template = messages[key][language === 'en' ? 1 : 0];
+      return template.replace(/\{(\w+)\}/g, (_, name) => String(values[name] ?? ''));
+    }
+    const staticText = [
+      ['.brand span:last-child', 'brand'], ['.intro p', 'intro'], ['.privacy', 'privacy'],
+      ['.drop-title', 'dropTitle'], ['.drop-sub', 'dropSub'], ['.section-label', 'loadStatus'],
+      ['.search-field .timeline-heading strong', 'searchTerms'], ['#search-help', 'searchHelp'],
+      ['#timeline-section .timeline-heading strong', 'timeDistribution'], ['.track-labels span:last-child', 'messageCount'],
+      ['#reset-time', 'clearTime'], ['.timeline-help', 'timelineHelp'],
+      ['.results-head h2', 'results'], ['.results-note', 'resultsNote'], ['#download', 'download']
+    ];
+    const staticAttributes = [
+      ['.workspace', 'aria-label', 'workspace'], ['#drop', 'aria-label', 'dropAria'],
+      ['#search', 'placeholder', 'searchPlaceholder'], ['#search', 'aria-label', 'searchTerms'],
+      ['#logger-suggestions', 'aria-label', 'loggerSuggestions'], ['#search-tags', 'aria-label', 'searchTerms'],
+      ['#timeline', 'aria-label', 'timelineAria'], ['#table-horizontal-scroll', 'aria-label', 'horizontalScroll']
+    ];
+    function updateLanguage() {
+      document.documentElement.lang = language === 'en' ? 'en' : 'zh-Hant';
+      document.title = tr('title');
+      for (const [selector, key] of staticText) document.querySelector(selector).textContent = tr(key);
+      for (const [selector, attribute, key] of staticAttributes) document.querySelector(selector).setAttribute(attribute, tr(key));
+      document.querySelector('.field[for="level"]').firstChild.textContent = tr('logLevel');
+      for (const option of $('level').options) option.textContent = option.value === '0' ? tr('allLevels') : tr('above', {level: levels[option.value]});
+      document.querySelector('.advanced-time summary').firstChild.textContent = tr('advancedTime') + ' ';
+      for (const [id, key] of [['time-start','startTime'],['time-end','endTime']]) document.querySelector(`.field[for="${id}"]`).firstChild.textContent = tr(key);
+      for (const [index, key] of ['time','level',null,'message',null,'source'].entries()) if (key) document.querySelectorAll('#log-table th')[index].firstChild.textContent = tr(key);
+      const toggle = $('language-toggle');
+      toggle.textContent = language === 'en' ? '中文' : 'English';
+      toggle.lang = language === 'en' ? 'zh-Hant' : 'en';
+      toggle.setAttribute('aria-label', language === 'en' ? '切換中文' : 'Switch to English');
+      updateThemeControl();
+    }
+    let statusMessage = {key:'initialStatus', values:{}};
+    function setStatus(key, values = {}) { statusMessage = {key, values}; $('status').textContent = tr(key, values); }
+    const themeToggle = $('theme-toggle');
+    function updateThemeControl() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      $('theme-label').textContent = tr(dark ? 'lightMode' : 'darkMode');
+      themeToggle.setAttribute('aria-label', tr(dark ? 'switchLight' : 'switchDark'));
+    }
+    updateThemeControl();
+    $('language-toggle').addEventListener('click', () => {
+      language = language === 'en' ? 'zh' : 'en';
+      try { localStorage.setItem('rosout-language', language); } catch {}
+      updateLanguage();
+      $('status').textContent = tr(statusMessage.key, statusMessage.values);
+      renderSearchTags();
+      updateTimeControls();
+      updateTimeSelectionText();
+      $('timeline-toggle-hint').textContent = timelineSection.open ? tr('collapse') : logs.length ? tr('expand') : tr('beforeLoad');
+      if (statusMessage.key === 'noFiles') $('error').textContent = tr('noFilesHelp');
+      if (loadedFiles.length && statusMessage.key === 'resultStatus') render();
+      if (timelineSection.open) drawTimeline();
+      updateResizeLabels();
+    });
+    themeToggle.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem('rosout-theme', next); } catch {}
+      updateThemeControl();
+      if ($('timeline-section').open) drawTimeline();
+    });
     const drop = $('drop'), fileInput = $('file');
     let logs = [], loadedFiles = [], loadToken = 0;
     const searchTerms = [];
@@ -283,12 +463,18 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       updateHorizontalScrollbar();
     }
     updateColumnWidths();
+    function updateResizeLabels() {
+      table.querySelectorAll('th').forEach(heading => {
+        const handle = heading.querySelector('.resize-handle');
+        if (handle) { handle.setAttribute('aria-label', tr('resize', {heading:heading.firstChild.textContent})); handle.title = tr('resizeHelp'); }
+      });
+    }
     table.querySelectorAll('th').forEach((heading, index) => {
       const handle = document.createElement('button');
       handle.type = 'button';
       handle.className = 'resize-handle';
-      handle.setAttribute('aria-label', `調整${heading.textContent}欄寬`);
-      handle.title = '拖曳調整欄寬；方向鍵每次調整 10px';
+      handle.setAttribute('aria-label', tr('resize', {heading:heading.firstChild.textContent}));
+      handle.title = tr('resizeHelp');
       heading.append(handle);
       let startX, startWidth;
       handle.addEventListener('pointerdown', event => {
@@ -318,15 +504,15 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
 
     function decodeLog(bytes) {
       const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-      if (bytes.length < 4 || bytes[0] !== 0 || (bytes[1] !== 0 && bytes[1] !== 1)) throw new Error('不支援的 CDR 編碼');
+      if (bytes.length < 4 || bytes[0] !== 0 || (bytes[1] !== 0 && bytes[1] !== 1)) throw new Error(tr('unsupportedCdr'));
       const little = bytes[1] === 1;
       let pos = 4;
       function align(n) { pos += (n - ((pos - 4) % n)) % n; }
-      function uint32() { align(4); if (pos + 4 > bytes.length) throw new Error('CDR 資料不完整'); const v = data.getUint32(pos, little); pos += 4; return v; }
-      function int32() { align(4); if (pos + 4 > bytes.length) throw new Error('CDR 資料不完整'); const v = data.getInt32(pos, little); pos += 4; return v; }
-      function string() { const len = uint32(); if (len < 1 || pos + len > bytes.length) throw new Error('CDR 字串長度錯誤'); const value = decoder.decode(bytes.subarray(pos, pos + len - 1)); pos += len; return value; }
+      function uint32() { align(4); if (pos + 4 > bytes.length) throw new Error(tr('incompleteCdr')); const v = data.getUint32(pos, little); pos += 4; return v; }
+      function int32() { align(4); if (pos + 4 > bytes.length) throw new Error(tr('incompleteCdr')); const v = data.getInt32(pos, little); pos += 4; return v; }
+      function string() { const len = uint32(); if (len < 1 || pos + len > bytes.length) throw new Error(tr('invalidCdrString')); const value = decoder.decode(bytes.subarray(pos, pos + len - 1)); pos += len; return value; }
       const sec = int32(), nanosec = uint32();
-      if (pos >= bytes.length) throw new Error('CDR 資料不完整');
+      if (pos >= bytes.length) throw new Error(tr('incompleteCdr'));
       const level = bytes[pos++];
       const name = string(), msg = string(), file = string(), func = string(), line = uint32();
       return {time: sec * 1000 + nanosec / 1e6, level, name, msg, file, func, line};
@@ -339,7 +525,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       const two = n => String(n).padStart(2, '0');
       return `${d.getFullYear()}/${two(d.getMonth() + 1)}/${two(d.getDate())}\n${two(d.getHours())}:${two(d.getMinutes())}`;
     }
-    const ansiColors = {30:'#26313d',31:'#b42318',32:'#16803c',33:'#9a6700',34:'#175cd3',35:'#9e3ab1',36:'#087f8c',37:'#52606d',90:'#667085',91:'#d92d20',92:'#039855',93:'#dc6803',94:'#2e90fa',95:'#c11574',96:'#06aed4',97:'#1d2939'};
+    const ansiColors = new Set([30, 31, 32, 33, 34, 35, 36, 37, 90, 91, 92, 93, 94, 95, 96, 97]);
     function appendAnsiText(target, text) {
       let offset = 0, color = '', bold = false;
       const ansi = /\x1b\[([0-9;]*)m/g;
@@ -358,7 +544,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
           if (code === 0) { color = ''; bold = false; }
           else if (code === 1) bold = true;
           else if (code === 22) bold = false;
-          else if (ansiColors[code]) color = ansiColors[code];
+          else if (ansiColors.has(code)) color = `var(--ansi-${code})`;
           else if (code === 39) color = '';
         }
         offset = ansi.lastIndex;
@@ -367,7 +553,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     }
     const timeline = $('timeline'), timelineSection = $('timeline-section');
     timelineSection.addEventListener('toggle', () => {
-      $('timeline-toggle-hint').textContent = timelineSection.open ? '點此收合' : logs.length ? '點此展開' : '載入檔案後顯示';
+      $('timeline-toggle-hint').textContent = timelineSection.open ? tr('collapse') : logs.length ? tr('expand') : tr('beforeLoad');
       if (timelineSection.open) requestAnimationFrame(drawTimeline);
     });
     let timeExtent = null, dragStart = null, dragCurrent = null, timelineBins = [];
@@ -380,6 +566,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       const end = $('time-end').value ? new Date($('time-end').value).getTime() : Infinity;
       return [start, end];
     }
+    function themeColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
     function drawTimeline() {
       const width = Math.max(1, Math.round(timeline.clientWidth));
       const height = 152, ratio = window.devicePixelRatio || 1;
@@ -389,13 +576,13 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       ctx.scale(ratio, ratio);
       ctx.clearRect(0, 0, width, height);
       const plotTop = 67, plotBottom = 145;
-      ctx.strokeStyle = '#dbe6ef'; ctx.lineWidth = 1;
+      ctx.strokeStyle = themeColor('--timeline-grid'); ctx.lineWidth = 1;
       for (const y of [plotTop, plotTop + 39, plotBottom]) {
         ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(width, y + .5); ctx.stroke();
       }
       if (!timeExtent) {
-        ctx.fillStyle = '#748da2'; ctx.font = '13px system-ui';
-        ctx.textAlign = 'center'; ctx.fillText('載入 MCAP 後顯示時間分布', width / 2, 100);
+        ctx.fillStyle = themeColor('--timeline-empty'); ctx.font = '13px system-ui';
+        ctx.textAlign = 'center'; ctx.fillText(tr('emptyTimeline'), width / 2, 100);
         return;
       }
       const bins = Array.from({length: Math.min(160, Math.max(24, Math.floor(width / 6)))}, () => [0, 0, 0]);
@@ -412,15 +599,15 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
         const count = bin[0] + bin[1] + bin[2];
         if (count) {
           const barHeight = Math.max(2, count / peak * (plotBottom - plotTop - 3));
-          ctx.fillStyle = '#9aafc1';
+          ctx.fillStyle = themeColor('--timeline-volume');
           ctx.fillRect(x, plotBottom - barHeight, barWidth, barHeight);
         }
         if (bin[1]) {
-          ctx.fillStyle = '#d89634';
+          ctx.fillStyle = themeColor('--timeline-warn');
           ctx.fillRect(x, 11, Math.max(2, step - .5), 13);
         }
         if (bin[2]) {
-          ctx.fillStyle = '#c3444b';
+          ctx.fillStyle = themeColor('--timeline-error');
           ctx.fillRect(x, 36, Math.max(2, step - .5), 13);
         }
       });
@@ -429,11 +616,11 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       if (Number.isFinite(start) || Number.isFinite(end)) {
         const left = Number.isFinite(start) ? Math.max(0, Math.min(width, (start - min) / span * width)) : 0;
         const right = Number.isFinite(end) ? Math.max(0, Math.min(width, (end - min) / span * width)) : width;
-        ctx.fillStyle = '#e8f0f8b8';
+        ctx.fillStyle = themeColor('--timeline-mask');
         ctx.fillRect(0, 0, left, height);
         ctx.fillRect(right, 0, width - right, height);
-        ctx.fillStyle = '#235c9e12'; ctx.fillRect(left, 0, Math.max(0, right - left), height);
-        ctx.strokeStyle = '#235c9e'; ctx.lineWidth = 2;
+        ctx.fillStyle = themeColor('--timeline-selection'); ctx.fillRect(left, 0, Math.max(0, right - left), height);
+        ctx.strokeStyle = themeColor('--timeline-edge'); ctx.lineWidth = 2;
         for (const x of [left, right]) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
       }
     }
@@ -442,18 +629,23 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       $('time-min').textContent = timeExtent ? displayTimelineTime(timeExtent[0]) : '—';
       $('time-max').textContent = timeExtent ? displayTimelineTime(timeExtent[1]) : '—';
       $('time-mid').textContent = timeExtent ? displayTimelineTime((timeExtent[0] + timeExtent[1]) / 2) : '—';
-      timeline.setAttribute('aria-label', timeExtent ? `時間分布，${logs.length} 筆紀錄，其中 ${logs.filter(log => log.level === 30).length} 筆 WARN、${logs.filter(log => log.level >= 40).length} 筆 ERROR 或 FATAL。可用下方時間欄位篩選。` : '載入 MCAP 後顯示時間分布');
+      timeline.setAttribute('aria-label', timeExtent ? tr('timelineSummary', {total:logs.length, warn:logs.filter(log => log.level === 30).length, error:logs.filter(log => log.level >= 40).length}) : tr('emptyTimeline'));
       for (const id of ['time-start', 'time-end']) $(id).disabled = !timeExtent;
       drawTimeline();
     }
     function applyTimeRange() {
       const active = Boolean($('time-start').value || $('time-end').value);
       $('reset-time').disabled = !active;
-      $('time-selection-note').textContent = active ? '（已設定範圍）' : '';
+      $('time-selection-note').textContent = active ? tr('rangeSet') : '';
       $('selection-bar').classList.toggle('has-selection', active);
-      const [start, end] = timeBounds();
-      $('selection-summary').textContent = active ? `${Number.isFinite(start) ? displayTimelineTime(start).replace('\n', ' ') : '最早'} ～ ${Number.isFinite(end) ? displayTimelineTime(end).replace('\n', ' ') : '最晚'}` : '顯示全部時間';
+      updateTimeSelectionText();
       drawTimeline(); render();
+    }
+    function updateTimeSelectionText() {
+      const active = Boolean($('time-start').value || $('time-end').value);
+      $('time-selection-note').textContent = active ? tr('rangeSet') : '';
+      const [start, end] = timeBounds();
+      $('selection-summary').textContent = active ? `${Number.isFinite(start) ? displayTimelineTime(start).replace('\n', ' ') : tr('earliest')} ～ ${Number.isFinite(end) ? displayTimelineTime(end).replace('\n', ' ') : tr('latest')}` : tr('allTime');
     }
     function timelineTime(event) {
       const rect = timeline.getBoundingClientRect();
@@ -475,7 +667,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       const bin = timelineBins[index], span = Math.max(1, timeExtent[1] - timeExtent[0]);
       const from = timeExtent[0] + index / timelineBins.length * span;
       const tip = $('timeline-tooltip');
-      tip.textContent = `${displayTimelineTime(from).replace('\n', ' ')}\n${bin.reduce((a, b) => a + b, 0)} 筆  WARN ${bin[1]}  ERROR/FATAL ${bin[2]}`;
+      tip.textContent = `${displayTimelineTime(from).replace('\n', ' ')}\n${tr('entries', {count:bin.reduce((a, b) => a + b, 0)})}  WARN ${bin[1]}  ERROR/FATAL ${bin[2]}`;
       tip.style.left = `${Math.min(rect.width - 90, Math.max(90, event.clientX - rect.left))}px`;
       tip.hidden = false;
     });
@@ -538,15 +730,15 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
     }
     function renderSearchTags() {
       const container = $('search-tags');
-      $('search-count').textContent = searchTerms.length ? `（${searchTerms.length} 個標籤）` : '';
+      $('search-count').textContent = searchTerms.length ? tr('tagCount', {count:searchTerms.length}) : '';
       container.replaceChildren();
       searchTerms.forEach((term, index) => {
         const tag = document.createElement('span'); tag.className = 'search-tag' + (term.startsWith('+') ? ' or-tag' : term.startsWith('-') ? ' exclude-tag' : '');
         const edit = document.createElement('button'); edit.type = 'button'; edit.className = 'tag-text';
-        edit.textContent = term; edit.setAttribute('aria-label', `編輯搜尋條件：${term}`);
+        edit.textContent = term; edit.setAttribute('aria-label', tr('editFilter', {term}));
         edit.addEventListener('click', () => {
           const input = document.createElement('input'); input.type = 'text'; input.value = term;
-          input.setAttribute('aria-label', `編輯搜尋條件：${term}`);
+          input.setAttribute('aria-label', tr('editFilter', {term}));
           edit.replaceWith(input); input.focus(); input.select();
           input.addEventListener('keydown', event => {
             if (event.key === 'Escape') { input.replaceWith(edit); edit.focus(); }
@@ -559,7 +751,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
           input.addEventListener('blur', () => { if (input.isConnected) input.replaceWith(edit); });
         });
         const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'tag-remove';
-        remove.textContent = '×'; remove.setAttribute('aria-label', `移除搜尋條件：${term}`);
+        remove.textContent = '×'; remove.setAttribute('aria-label', tr('removeFilter', {term}));
         remove.addEventListener('click', () => { searchTerms.splice(index, 1); renderSearchTags(); render(); });
         tag.append(edit, remove); container.append(tag);
       });
@@ -581,42 +773,43 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       }
       body.append(fragment);
       updateHorizontalScrollbar();
-      const fileSummary = loadedFiles.length === 1 ? loadedFiles[0] : `${loadedFiles.length} 個 MCAP 檔案`;
-      $('status').textContent = `${fileSummary}：共 ${logs.length.toLocaleString()} 筆 /rosout，篩選後 ${matches.length.toLocaleString()} 筆` + (matches.length > 5000 ? '（表格只顯示前 5,000 筆，可下載全部篩選結果）' : '');
+      const fileSummary = loadedFiles.length === 1 ? loadedFiles[0] : tr('fileCount', {count:loadedFiles.length});
+      setStatus('resultStatus', {files:fileSummary, total:logs.length.toLocaleString(), filtered:matches.length.toLocaleString()});
+      if (matches.length > 5000) $('status').textContent += tr('resultLimit');
       $('download').disabled = matches.length === 0;
     }
 
     async function load(files) {
       const selected = [...files].map(item => item.file ? item : {file:item, name:item.webkitRelativePath || item.name})
         .filter(item => item.file && /\.mcap$/i.test(item.name));
-      if (!selected.length) { $('status').textContent = '未找到 MCAP 檔案'; $('error').textContent = '找不到 .mcap 檔案。請拖入含有 MCAP 的資料夾，或直接選擇檔案。'; return; }
+      if (!selected.length) { setStatus('noFiles'); $('error').textContent = tr('noFilesHelp'); return; }
       selected.sort((a, b) => a.name.localeCompare(b.name, 'zh-TW', {numeric:true}));
       const token = ++loadToken; logs = []; loggerNames = []; renderLoggerSuggestions(); loadedFiles = selected.map(item => item.name);
       timelineSection.open = false;
       $('time-start').value = $('time-end').value = ''; updateTimeControls(); $('reset-time').disabled = true; $('time-selection-note').textContent = '';
-      $('selection-bar').classList.remove('has-selection'); $('selection-summary').textContent = '顯示全部時間';
+      $('selection-bar').classList.remove('has-selection'); $('selection-summary').textContent = tr('allTime');
       $('rows').replaceChildren(); $('error').textContent = ''; $('download').disabled = true;
-      $('status').textContent = `正在讀取 ${selected.length} 個檔案…`;
+      setStatus('readingFiles', {count:selected.length});
       try {
         const {BlobReadable, McapIndexedReader} = window.McapLocal;
         const failures = [];
         for (const [index, item] of selected.entries()) {
           if (token !== loadToken) return;
-          $('status').textContent = `正在讀取 ${item.name}（${index + 1}/${selected.length}）…`;
+          setStatus('readingFile', {name:item.name, index:index+1, total:selected.length});
           try {
             const reader = await McapIndexedReader.Initialize({readable:new BlobReadable(item.file)});
             const channels = [...reader.channelsById.values()].filter(c => c.topic === '/rosout');
-            if (!channels.length) throw new Error('沒有 /rosout topic');
+            if (!channels.length) throw new Error(tr('noRosout'));
             for (const channel of channels) {
               const schema = reader.schemasById.get(channel.schemaId);
               if (channel.messageEncoding !== 'cdr' || !schema?.name?.includes('rcl_interfaces/msg/Log'))
-                throw new Error(`不支援 ${channel.messageEncoding} / ${schema?.name || '未知 schema'}`);
+                throw new Error(tr('unsupportedSchema', {encoding:channel.messageEncoding, schema:schema?.name || tr('unknownSchema')}));
             }
             let count = 0;
             for await (const message of reader.readMessages({topics:['/rosout']})) {
               if (token !== loadToken) return;
               logs.push({...decodeLog(message.data), bag:item.name});
-              if (++count % 1000 === 0) { $('status').textContent = `正在讀取 ${item.name}：${count.toLocaleString()} 筆…`; await new Promise(resolve => setTimeout(resolve, 0)); }
+              if (++count % 1000 === 0) { setStatus('readingCount', {name:item.name, count:count.toLocaleString()}); await new Promise(resolve => setTimeout(resolve, 0)); }
             }
           } catch (error) { failures.push(`${item.name}：${error.message || String(error)}`); }
         }
@@ -629,7 +822,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
         $('error').textContent = failures.join('\n');
         render();
       } catch (error) {
-        if (token === loadToken) { $('status').textContent = '讀取失敗'; $('error').textContent = error.message || String(error); }
+        if (token === loadToken) { setStatus('loadFailed'); $('error').textContent = error.message || String(error); }
       }
     }
 
@@ -691,7 +884,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
         } catch (error) { failures.push(error); }
       }
       if (files.length) return files;
-      if (failures.length) throw new Error(`瀏覽器無法讀取拖入的資料夾：${failures.at(-1).message || failures.at(-1)}。請確認瀏覽器支援資料夾拖放，或改為拖入 MCAP 檔案。`);
+      if (failures.length) throw new Error(tr('folderError', {error:failures.at(-1).message || failures.at(-1)}));
       return fallbackFiles;
     }
     drop.addEventListener('click', () => fileInput.click());
@@ -703,16 +896,16 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       e.preventDefault(); drop.classList.remove('over');
       const scanToken = ++loadToken;
       $('error').textContent = '';
-      $('status').textContent = '正在搜尋資料夾中的 MCAP 檔案…';
+      setStatus('scanning');
       let files;
       try { files = await droppedFiles(e.dataTransfer); }
       catch (error) {
-        if (scanToken === loadToken) { $('status').textContent = '無法讀取資料夾'; $('error').textContent = error.message || String(error); }
+        if (scanToken === loadToken) { setStatus('folderFailed'); $('error').textContent = error.message || String(error); }
         return;
       }
       if (scanToken !== loadToken) return;
       try { await load(files); }
-      catch (error) { $('status').textContent = '無法載入檔案'; $('error').textContent = error.message || String(error); }
+      catch (error) { setStatus('fileFailed'); $('error').textContent = error.message || String(error); }
     });
     $('search').addEventListener('input', renderLoggerSuggestions);
     $('search').addEventListener('focus', renderLoggerSuggestions);
@@ -735,6 +928,10 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
       addSearchTerm(suggestionIndex >= 0 && !$('logger-suggestions').hidden ? prefix + suggestedNames[suggestionIndex] : raw);
     });
     $('level').addEventListener('change', render);
+    updateLanguage();
+    $('status').textContent = tr('initialStatus');
+    $('timeline-toggle-hint').textContent = tr('beforeLoad');
+    $('selection-summary').textContent = tr('allTime');
     $('download').addEventListener('click', () => {
       const cells = [['time','level','name','message','mcap','file','function','line'], ...filtered().map(x => [displayTime(x.time),levels[x.level] || x.level,x.name,x.msg,x.bag,x.file,x.func,x.line])];
       const csv = '\ufeff' + cells.map(row => row.map(v => `"${String(v).replaceAll('"','""')}"`).join(',')).join('\r\n');
