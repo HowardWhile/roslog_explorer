@@ -26,21 +26,21 @@
     .upload-icon { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; flex: none; border-radius: .6rem; background: #dcecff; color: #2f65ad; font-size: 1.8rem; }
     .drop-title { display: block; font-weight: 700; font-size: 1.1rem; }
     .drop-sub { display: block; color: #60798e; font-size: .87rem; margin-top: .3rem; line-height: 1.5; }
-    #file, #folder { display: none; }
-    .upload-options { display: flex; align-items: center; gap: .75rem; margin-top: .65rem; }
-    #folder-picker { border: 1px solid #abc3d8; border-radius: .4rem; padding: .4rem .7rem; background: white; color: #235c9e; font-size: .85rem; font-weight: 650; cursor: pointer; }
-    #folder-picker:hover { background: #e7f1fb; }
+    #file { display: none; }
     .load-details { display: flex; flex-direction: column; justify-content: center; gap: .6rem; min-width: 0; }
     .section-label { font-weight: 700; font-size: .88rem; }
     #status, #error { margin: 0; overflow-wrap: anywhere; line-height: 1.55; }
     #status { color: #526b80; } #error { color: #ae3039; white-space: pre-wrap; }
-    .filters { display: flex; flex-wrap: wrap; align-items: start; gap: .8rem; padding: 1.1rem 1.3rem; border-bottom: 1px solid #dce6ee; }
+    .filters { border-bottom: 1px solid #dce6ee; }
     .field { display: grid; gap: .4rem; color: #496176; font-size: .82rem; font-weight: 650; }
-    .search-field { flex: 1 1 340px; position: relative; min-width: 0; }
-    .search-field summary { color: #496176; font-size: .82rem; font-weight: 650; cursor: pointer; }
-    .search-field summary::marker { color: #235c9e; }
-    .search-content { display: grid; gap: .4rem; padding-top: .4rem; }
-    .logger-suggestions { position: absolute; top: 5rem; left: 0; right: 0; z-index: 5; max-height: 14rem; overflow: auto; border: 1px solid #bdcedc; border-radius: .45rem; background: white; box-shadow: 0 8px 24px #173b6129; }
+    .search-field { min-width: 0; }
+    .search-content { display: grid; gap: .4rem; padding: 0 1.3rem 1.25rem; }
+    .search-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .8rem; }
+    .search-input { position: relative; flex: 1 1 340px; min-width: 0; }
+    .search-input input { width: 100%; }
+    .search-controls .field { flex: 0 1 200px; }
+    .search-controls .field select { width: 100%; }
+    .logger-suggestions { position: absolute; top: 100%; left: 0; right: 0; z-index: 5; max-height: 14rem; overflow: auto; border: 1px solid #bdcedc; border-radius: .45rem; background: white; box-shadow: 0 8px 24px #173b6129; }
     .logger-suggestions[hidden] { display: none; }
     .logger-suggestions button { display: block; width: 100%; border: 0; background: white; color: #193047; padding: .55rem .85rem; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
     .logger-suggestions button:hover, .logger-suggestions button.active { background: #e7f1fb; }
@@ -54,8 +54,8 @@
     .search-tag.or-tag { background: #e3f5e9; border-color: #78b892; color: #17633f; }
     .search-tag.exclude-tag { background: #fff1ef; border-color: #e0aaa4; color: #963d38; }
     .search-tag input { width: min(16rem, 60vw); height: 2rem; border: 0; background: white; padding: 0 .4rem; }
-    .field input, .field select { height: 2.75rem; border: 1px solid #bdcedc; border-radius: .45rem; background: white; color: #193047; padding: 0 .85rem; min-width: 0; font-size: .93rem; }
-    .field input::placeholder { color: #798da0; }
+    .field input, .field select, .search-input input { height: 2.75rem; border: 1px solid #bdcedc; border-radius: .45rem; background: white; color: #193047; padding: 0 .85rem; min-width: 0; font-size: .93rem; }
+    .field input::placeholder, .search-input input::placeholder { color: #798da0; }
     #download { height: 2.75rem; border: 1px solid #235c9e; border-radius: .45rem; background: #235c9e; color: white; padding: 0 1rem; font-weight: 650; cursor: pointer; }
     #download:hover:not(:disabled) { background: #184979; }
     #download:disabled { background: #e2eaf0; border-color: #e2eaf0; color: #8395a4; cursor: not-allowed; }
@@ -67,7 +67,7 @@
     .timeline-heading strong { font-size: 1rem; letter-spacing: -.02em; }
     .timeline-heading span { display: flex; align-items: center; gap: .65rem; color: #60798e; font-size: .82rem; }
     .timeline-heading span::after { content: "⌄"; color: #235c9e; font-size: 1.25rem; line-height: .7; transition: transform .15s; }
-    .timeline-panel[open] .timeline-heading span::after { transform: rotate(180deg); }
+    .timeline-panel[open] .timeline-heading span::after, .search-field[open] .timeline-heading span::after { transform: rotate(180deg); }
     .timeline-content { padding: 0 1.3rem 1.25rem; }
     .timeline-frame { display: grid; grid-template-columns: 102px minmax(0, 1fr); column-gap: .8rem; padding: .8rem; border: 1px solid #d5e2ed; border-radius: .55rem; background: #f5f9fc; }
     .track-labels { display: flex; flex-direction: column; height: 152px; color: #536c80; font-size: .76rem; font-weight: 650; }
@@ -118,7 +118,7 @@
     td.level { font-size: .76rem; font-weight: 700; }
     .DEBUG { color: #667e91; } .INFO { color: #286497; } .WARN { color: #9c600b; } .ERROR, .FATAL { color: #b33139; }
     .footnote { margin: 1rem .2rem 0; color: #637c90; font-size: .8rem; line-height: 1.5; }
-    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, .search-field { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
+    @media (max-width: 760px) { .timeline-heading { align-items: start; flex-direction: column; gap: .2rem; } .timeline-frame { grid-template-columns: 72px minmax(0, 1fr); gap: .35rem; } .track-labels { font-size: .65rem; } .timeline-axis { font-size: .65rem; } .timeline-axis span:nth-child(2) { display: none; } .masthead-note, .privacy { display: none; } .load-panel { grid-template-columns: 1fr; } .field, .search-controls .field { flex: 1 1 100%; } .results-head { align-items: start; flex-direction: column; gap: .2rem; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -128,12 +128,20 @@
     <div class="intro"><div><h1>Log viewer</h1><p>讀取 ROS 2 的 /rosout 紀錄，快速搜尋訊息、定位來源，並匯出篩選結果。</p></div><span class="privacy">檔案只在瀏覽器內處理</span></div>
     <section class="workspace" aria-label="Log viewer 工作區">
       <div class="load-panel">
-        <div><div id="drop" role="button" tabindex="0" aria-label="選擇 MCAP 檔案，或拖入 MCAP 檔案及資料夾"><span class="upload-icon" aria-hidden="true">↥</span><span><span class="drop-title">拖入 MCAP 檔案或資料夾</span><span class="drop-sub">點這裡選擇檔案，也可一次拖入多個檔案或資料夾</span></span><input id="file" type="file" accept=".mcap" multiple></div><div class="upload-options"><button id="folder-picker" type="button">選擇資料夾</button><input id="folder" type="file" webkitdirectory directory multiple></div></div>
+        <div><div id="drop" role="button" tabindex="0" aria-label="選擇 MCAP 檔案，或拖入 MCAP 檔案及資料夾"><span class="upload-icon" aria-hidden="true">↥</span><span><span class="drop-title">拖入 MCAP 檔案或資料夾</span><span class="drop-sub">點這裡選擇檔案，也可一次拖入多個檔案或資料夾</span></span><input id="file" type="file" accept=".mcap" multiple></div></div>
         <div class="load-details"><span class="section-label">讀取狀態</span><p id="status" aria-live="polite">尚未載入檔案。請選擇一個或多個 .mcap 檔。</p><p id="error" role="alert"></p></div>
       </div>
       <div class="filters">
-        <details class="search-field" open><summary>搜尋條件<span id="search-count"></span></summary><div class="search-content"><input id="search" type="search" placeholder="輸入關鍵字，按 Enter 新增標籤" aria-label="搜尋條件" aria-describedby="search-help"><div id="logger-suggestions" class="logger-suggestions" aria-label="Logger 名稱建議" hidden></div><div id="search-tags" class="search-tags" aria-label="搜尋條件"></div><span id="search-help" class="search-help">一般標籤要全部符合；加上 + 也會顯示符合該標籤的紀錄；加上 - 則排除。例：robot_driver、+taskmgr 會顯示兩者的紀錄。</span></div></details>
-        <label class="field" for="level">Log 等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
+        <details class="search-field" open><summary class="timeline-heading"><strong>搜尋條件</strong><span id="search-count"></span></summary>
+          <div class="search-content">
+            <div class="search-controls">
+              <div class="search-input"><input id="search" type="search" placeholder="輸入關鍵字，按 Enter 新增標籤" aria-label="搜尋條件" aria-describedby="search-help"><div id="logger-suggestions" class="logger-suggestions" aria-label="Logger 名稱建議" hidden></div></div>
+              <label class="field" for="level">Log 等級<select id="level"><option value="0">所有等級</option><option value="10">DEBUG 以上</option><option value="20">INFO 以上</option><option value="30">WARN 以上</option><option value="40">ERROR 以上</option><option value="50">FATAL</option></select></label>
+            </div>
+            <div id="search-tags" class="search-tags" aria-label="搜尋條件"></div>
+            <span id="search-help" class="search-help">一般標籤要全部符合；加上 + 也會顯示符合該標籤的紀錄；加上 - 則排除。例：robot_driver、+taskmgr 會顯示兩者的紀錄。</span>
+          </div>
+        </details>
       </div>
       <details id="timeline-section" class="timeline-panel">
         <summary class="timeline-heading"><strong>時間分布</strong><span id="timeline-toggle-hint">載入檔案後顯示</span></summary>
@@ -232,7 +240,7 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
   </script>
   <script type="module">
     const $ = id => document.getElementById(id);
-    const drop = $('drop'), fileInput = $('file'), folderInput = $('folder');
+    const drop = $('drop'), fileInput = $('file');
     let logs = [], loadedFiles = [], loadToken = 0;
     const searchTerms = [];
     let loggerNames = [], suggestedNames = [], suggestionIndex = -1;
@@ -683,14 +691,12 @@ var McapLocal=(()=>{var Z=Object.defineProperty;var st=Object.getOwnPropertyDesc
         } catch (error) { failures.push(error); }
       }
       if (files.length) return files;
-      if (failures.length) throw new Error(`瀏覽器無法讀取拖入的資料夾：${failures.at(-1).message || failures.at(-1)}。請改用「選擇資料夾」。`);
+      if (failures.length) throw new Error(`瀏覽器無法讀取拖入的資料夾：${failures.at(-1).message || failures.at(-1)}。請確認瀏覽器支援資料夾拖放，或改為拖入 MCAP 檔案。`);
       return fallbackFiles;
     }
     drop.addEventListener('click', () => fileInput.click());
     drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
     fileInput.addEventListener('change', e => { load(e.target.files); e.target.value = ''; });
-    $('folder-picker').addEventListener('click', () => folderInput.click());
-    folderInput.addEventListener('change', e => { load(e.target.files); e.target.value = ''; });
     drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
     drop.addEventListener('dragleave', () => drop.classList.remove('over'));
     drop.addEventListener('drop', async e => {
