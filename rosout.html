@@ -26,7 +26,10 @@
     .upload-icon { display: grid; place-items: center; width: 3.2rem; height: 3.2rem; flex: none; border-radius: .6rem; background: #dcecff; color: #2f65ad; font-size: 1.8rem; }
     .drop-title { display: block; font-weight: 700; font-size: 1.1rem; }
     .drop-sub { display: block; color: #60798e; font-size: .87rem; margin-top: .3rem; line-height: 1.5; }
-    #file { display: none; }
+    #file, #folder { display: none; }
+    .upload-options { display: flex; align-items: center; gap: .75rem; margin-top: .65rem; }
+    #folder-picker { border: 1px solid #abc3d8; border-radius: .4rem; padding: .4rem .7rem; background: white; color: #235c9e; font-size: .85rem; font-weight: 650; cursor: pointer; }
+    #folder-picker:hover { background: #e7f1fb; }
     .load-details { display: flex; flex-direction: column; justify-content: center; gap: .6rem; min-width: 0; }
     .section-label { font-weight: 700; font-size: .88rem; }
     #status, #error { margin: 0; overflow-wrap: anywhere; line-height: 1.55; }
@@ -98,7 +101,7 @@
     <div class="intro"><div><h1>Log viewer</h1><p>讀取 ROS 2 的 /rosout 紀錄，快速搜尋訊息、定位來源，並匯出篩選結果。</p></div><span class="privacy">檔案只在瀏覽器內處理</span></div>
     <section class="workspace" aria-label="Log viewer 工作區">
       <div class="load-panel">
-        <div id="drop" role="button" tabindex="0" aria-label="選擇或拖入 MCAP 檔案"><span class="upload-icon" aria-hidden="true">↥</span><span><span class="drop-title">拖入 MCAP 檔案</span><span class="drop-sub">或點這裡選擇檔案，可一次載入多個</span></span><input id="file" type="file" accept=".mcap" multiple></div>
+        <div><div id="drop" role="button" tabindex="0" aria-label="選擇 MCAP 檔案，或拖入 MCAP 檔案及資料夾"><span class="upload-icon" aria-hidden="true">↥</span><span><span class="drop-title">拖入 MCAP 檔案或資料夾</span><span class="drop-sub">點這裡選擇檔案，也可一次拖入多個檔案或資料夾</span></span><input id="file" type="file" accept=".mcap" multiple></div><div class="upload-options"><button id="folder-picker" type="button">選擇資料夾</button><input id="folder" type="file" webkitdirectory directory multiple></div></div>
         <div class="load-details"><span class="section-label">讀取狀態</span><p id="status" aria-live="polite">尚未載入檔案。請選擇一個或多個 .mcap 檔。</p><p id="error" role="alert"></p></div>
       </div>
       <div class="filters">
@@ -126,7 +129,7 @@
   </main>
   <script type="module">
     const $ = id => document.getElementById(id);
-    const drop = $('drop'), fileInput = $('file');
+    const drop = $('drop'), fileInput = $('file'), folderInput = $('folder');
     let logs = [], loadedFiles = [], loadToken = 0;
     const levels = {10:'DEBUG', 20:'INFO', 30:'WARN', 40:'ERROR', 50:'FATAL'};
     const decoder = new TextDecoder();
@@ -373,9 +376,11 @@
     }
 
     async function load(files) {
-      const selected = [...files].filter(file => file);
-      if (!selected.length) return;
-      const token = ++loadToken; logs = []; loadedFiles = selected.map(file => file.name);
+      const selected = [...files].map(item => item.file ? item : {file:item, name:item.webkitRelativePath || item.name})
+        .filter(item => item.file && /\.mcap$/i.test(item.name));
+      if (!selected.length) { $('status').textContent = '未找到 MCAP 檔案'; $('error').textContent = '找不到 .mcap 檔案。請拖入含有 MCAP 的資料夾，或直接選擇檔案。'; return; }
+      selected.sort((a, b) => a.name.localeCompare(b.name, 'zh-TW', {numeric:true}));
+      const token = ++loadToken; logs = []; loadedFiles = selected.map(item => item.name);
       $('time-start').value = $('time-end').value = ''; updateTimeControls(); $('reset-time').disabled = true; $('time-selection-note').textContent = '';
       $('selection-bar').classList.remove('has-selection'); $('selection-summary').textContent = '顯示全部時間';
       $('rows').replaceChildren(); $('error').textContent = ''; $('download').disabled = true;
@@ -385,11 +390,11 @@
           import('https://esm.sh/@mcap/browser@1.1.0'), import('https://esm.sh/@mcap/core@2.1.6')
         ]);
         const failures = [];
-        for (const [index, file] of selected.entries()) {
+        for (const [index, item] of selected.entries()) {
           if (token !== loadToken) return;
-          $('status').textContent = `正在讀取 ${file.name}（${index + 1}/${selected.length}）…`;
+          $('status').textContent = `正在讀取 ${item.name}（${index + 1}/${selected.length}）…`;
           try {
-            const reader = await McapIndexedReader.Initialize({readable:new BlobReadable(file)});
+            const reader = await McapIndexedReader.Initialize({readable:new BlobReadable(item.file)});
             const channels = [...reader.channelsById.values()].filter(c => c.topic === '/rosout');
             if (!channels.length) throw new Error('沒有 /rosout topic');
             for (const channel of channels) {
@@ -400,10 +405,10 @@
             let count = 0;
             for await (const message of reader.readMessages({topics:['/rosout']})) {
               if (token !== loadToken) return;
-              logs.push({...decodeLog(message.data), bag:file.name});
-              if (++count % 1000 === 0) { $('status').textContent = `正在讀取 ${file.name}：${count.toLocaleString()} 筆…`; await new Promise(resolve => setTimeout(resolve, 0)); }
+              logs.push({...decodeLog(message.data), bag:item.name});
+              if (++count % 1000 === 0) { $('status').textContent = `正在讀取 ${item.name}：${count.toLocaleString()} 筆…`; await new Promise(resolve => setTimeout(resolve, 0)); }
             }
-          } catch (error) { failures.push(`${file.name}：${error.message || String(error)}`); }
+          } catch (error) { failures.push(`${item.name}：${error.message || String(error)}`); }
         }
         if (token !== loadToken) return;
         logs.sort((a, b) => a.time - b.time);
@@ -415,12 +420,89 @@
       }
     }
 
+    async function droppedFiles(dataTransfer) {
+      // Capture handles while the drop event's data store is still readable.
+      const items = [...dataTransfer.items].filter(item => item.kind === 'file');
+      const sources = items.map(item => {
+        let handle = null, entry = null, file = null, captureError = null;
+        try { if (item.getAsFileSystemHandle) handle = item.getAsFileSystemHandle(); }
+        catch (error) { captureError = error; }
+        try { entry = item.webkitGetAsEntry?.() || item.getAsEntry?.() || null; }
+        catch (error) { captureError ||= error; }
+        try { file = item.getAsFile?.() || null; }
+        catch (error) { captureError ||= error; }
+        return {handle, entry, file, captureError};
+      });
+      const fallbackFiles = [...dataTransfer.files];
+      async function walkHandle(handle, path = '') {
+        const name = path + handle.name;
+        if (handle.kind === 'file') {
+          if (!/\.mcap$/i.test(handle.name)) return [];
+          return [{file:await handle.getFile(), name}];
+        }
+        const files = [];
+        for await (const child of handle.values()) files.push(...await walkHandle(child, name + '/'));
+        return files;
+      }
+      async function walkEntry(entry, path = '') {
+        const name = path + entry.name;
+        if (entry.isFile) {
+          if (!/\.mcap$/i.test(entry.name)) return [];
+          const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+          return [{file, name}];
+        }
+        if (!entry.isDirectory) return [];
+        const reader = entry.createReader(), files = [];
+        for (;;) {
+          const batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+          if (!batch.length) break;
+          for (const child of batch) files.push(...await walkEntry(child, name + '/'));
+        }
+        return files;
+      }
+      if (!sources.length) return fallbackFiles;
+      const files = [], failures = [];
+      for (const source of sources) {
+        try {
+          let result = null;
+          if (source.handle) {
+            try {
+              const handle = await source.handle;
+              if (handle) result = await walkHandle(handle);
+            } catch (error) { failures.push(error); }
+          }
+          if (result === null && source.entry) result = await walkEntry(source.entry);
+          if (result === null && source.file) result = [source.file];
+          if (result) files.push(...result);
+          else if (source.captureError) failures.push(source.captureError);
+        } catch (error) { failures.push(error); }
+      }
+      if (files.length) return files;
+      if (failures.length) throw new Error(`瀏覽器無法讀取拖入的資料夾：${failures.at(-1).message || failures.at(-1)}。請改用「選擇資料夾」。`);
+      return fallbackFiles;
+    }
     drop.addEventListener('click', () => fileInput.click());
     drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
-    fileInput.addEventListener('change', e => load(e.target.files));
+    fileInput.addEventListener('change', e => { load(e.target.files); e.target.value = ''; });
+    $('folder-picker').addEventListener('click', () => folderInput.click());
+    folderInput.addEventListener('change', e => { load(e.target.files); e.target.value = ''; });
     drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
     drop.addEventListener('dragleave', () => drop.classList.remove('over'));
-    drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); load(e.dataTransfer.files); });
+    drop.addEventListener('drop', async e => {
+      e.preventDefault(); drop.classList.remove('over');
+      const scanToken = ++loadToken;
+      $('error').textContent = '';
+      $('status').textContent = '正在搜尋資料夾中的 MCAP 檔案…';
+      let files;
+      try { files = await droppedFiles(e.dataTransfer); }
+      catch (error) {
+        if (scanToken === loadToken) { $('status').textContent = '無法讀取資料夾'; $('error').textContent = error.message || String(error); }
+        return;
+      }
+      if (scanToken !== loadToken) return;
+      try { await load(files); }
+      catch (error) { $('status').textContent = '無法載入檔案'; $('error').textContent = error.message || String(error); }
+    });
     $('search').addEventListener('input', render); $('level').addEventListener('change', render);
     $('download').addEventListener('click', () => {
       const cells = [['time','level','name','message','mcap','file','function','line'], ...filtered().map(x => [displayTime(x.time),levels[x.level] || x.level,x.name,x.msg,x.bag,x.file,x.func,x.line])];
