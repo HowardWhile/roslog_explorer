@@ -1,6 +1,10 @@
 # ROS Log Explorer
 
+[English](./README.md) | 繁體中文
+
 [線上開啟 ROS Log Explorer](https://howardwhile.github.io/roslog_explorer/)
+
+![image-20260930081216726](./pic/readme/image-20260930081216726.png)
 
 在瀏覽器中分析 ROS 2 MCAP 檔案的 `/rosout` 紀錄。拖入檔案後，即可依訊息內容、Logger、等級與時間範圍找出需要追查的事件，再將篩選結果匯出為 CSV。
 
@@ -61,3 +65,7 @@
 ## 下一步
 
 開啟 [分析器](./roslog_explorer.html) 並載入一個含有 `/rosout` 的 MCAP 檔，先用 WARN 以上的等級篩選，再於時間分布中定位異常時段。
+
+## 授權
+
+本專案以 [MIT License](./LICENSE) 授權。
