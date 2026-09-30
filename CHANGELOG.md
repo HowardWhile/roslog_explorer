@@ -6,7 +6,7 @@
 
 ## [Unreleased]
 
-## 0.1.0 - 2026-09-30
+## [v0.1.0] - 2026-09-30
 
 ### Added
 
@@ -24,3 +24,4 @@
 - 將分析器頁面重新命名為 `roslog_explorer.html`。
 
 [Unreleased]: https://github.com/HowardWhile/roslog_explorer/commits/develop/
+[v0.1.0]: https://github.com/HowardWhile/roslog_explorer/releases/tag/v0.1.0
