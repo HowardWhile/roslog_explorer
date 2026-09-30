@@ -2,9 +2,11 @@
 
 本檔案記錄 ROS Log Explorer 的重要變更。
 
-格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)。目前尚無已標記的發行版本，變更暫列於「未發布」。
+格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)。
 
 ## [Unreleased]
+
+## [v0.1.0] - 2026-09-30
 
 ### Added
 
@@ -15,9 +17,11 @@
 - 支援依最低 Log 等級篩選，並將所有符合條件的紀錄匯出為 CSV。
 - 加入 GitHub Pages 入口頁面，以及繁體中文和英文介面。
 - 加入英文與繁體中文 README，以及 MIT 授權。
+- 在分析器頁首顯示版本號 `v0.1.0`。
 
 ### Changed
 
 - 將分析器頁面重新命名為 `roslog_explorer.html`。
 
 [Unreleased]: https://github.com/HowardWhile/roslog_explorer/commits/develop/
+[v0.1.0]: https://github.com/HowardWhile/roslog_explorer/releases/tag/v0.1.0

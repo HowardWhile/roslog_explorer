@@ -66,6 +66,10 @@ The page parses files selected from your device in the browser. The application 
 
 Open the [explorer](./roslog_explorer.html), load an MCAP file containing `/rosout`, filter to WARN and above, and use the time distribution to find an anomalous period.
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).

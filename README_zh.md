@@ -66,6 +66,10 @@
 
 開啟 [分析器](./roslog_explorer.html) 並載入一個含有 `/rosout` 的 MCAP 檔，先用 WARN 以上的等級篩選，再於時間分布中定位異常時段。
 
+## 更新日誌
+
+版本變更請參閱 [CHANGELOG.md](./CHANGELOG.md)。
+
 ## 授權
 
 本專案以 [MIT License](./LICENSE) 授權。
